@@ -138,7 +138,7 @@ export default function MainContentArea({ anonymousLoggedIn, onAnonymousLogin, s
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-[18px] font-semibold text-[#333333] flex items-center">
             <Search className="w-5 h-5 mr-2 scale-x-[-1] stroke-[#FFD700]" strokeWidth={2} />
-            Быстрый ai поиск
+            Быстрый нейропоиск
           </h2>
           <Button 
             variant="ghost" 
