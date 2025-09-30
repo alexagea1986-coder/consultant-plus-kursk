@@ -36,6 +36,8 @@ export default function MainContentArea({ anonymousLoggedIn, onAnonymousLogin, s
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [followUpQuestions, setFollowUpQuestions] = useState<string[]>([]);
+  const [selectedFollowUp, setSelectedFollowUp] = useState<string | null>(null);
 
   const hasChat = messages.length > 0 || isLoading;
 
@@ -72,44 +74,45 @@ export default function MainContentArea({ anonymousLoggedIn, onAnonymousLogin, s
     localStorage.removeItem('chatHistory');
   };
 
-  const handleSend = async () => {
-    if (!input.trim() || isLoading) return;
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim()) return;
 
-    const userMessage: Message = { role: 'user', content: input };
-    const updatedMessages = [...messages, userMessage];
-    setMessages(updatedMessages);
+    const newMessages = [...messages, { role: 'user', content: input }];
+    setMessages(newMessages);
     setInput('');
-    setIsLoading(true);
-
-    // Reset textarea height
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-    }
 
     try {
+      setIsLoading(true);
       const response = await fetch('/api/gigachat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          messages: updatedMessages,
-          selectedProfile 
-        }),
+        body: JSON.stringify({ messages: newMessages, selectedProfile }),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to get response');
+      if (!response.ok) throw new Error('API request failed');
+
+      const { content } = await response.json();
+
+      // Parse follow-up questions from the end of the response
+      const lines = content.split('\n');
+      const questionStartIndex = lines.findIndex(line => line.startsWith('Возможные уточняющие вопросы:'));
+      let newFollowUps: string[] = [];
+      if (questionStartIndex !== -1) {
+        newFollowUps = lines.slice(questionStartIndex + 1).filter(line => line.trim()).map(line => line.replace(/^\d+\.\s*/, ''));
+        // Remove the follow-up section from the main content
+        const mainContent = lines.slice(0, questionStartIndex).join('\n');
+        setMessages([...newMessages, { role: 'assistant', content: mainContent.trim() }]);
+      } else {
+        setMessages([...newMessages, { role: 'assistant', content }]);
       }
 
-      const data = await response.json();
-      const assistantMessage: Message = { 
-        role: 'assistant', 
-        content: data.content 
-      };
-      setMessages(prev => [...prev, assistantMessage]);
+      setFollowUpQuestions(newFollowUps);
+      setSelectedFollowUp(null);
+
     } catch (error) {
       console.error('Chat error:', error);
-      const errorMessage: Message = { role: 'assistant', content: 'Извините, произошла ошибка при получении ответа.' };
-      setMessages(prev => [...prev, errorMessage]);
+      setMessages([...newMessages, { role: 'assistant', content: 'Извините, произошла ошибка. Попробуйте позже.' }]);
     } finally {
       setIsLoading(false);
     }
@@ -129,7 +132,7 @@ export default function MainContentArea({ anonymousLoggedIn, onAnonymousLogin, s
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSend();
+      handleSubmit(e);
     }
   };
 
@@ -154,31 +157,47 @@ export default function MainContentArea({ anonymousLoggedIn, onAnonymousLogin, s
       
       <div className="flex-1 mb-4">
         {hasChat && (
-          <div className="flex-1 overflow-y-auto space-y-4 p-4 bg-[#F5F5F5] rounded-lg border border-[#DDDDDD]">
-            {messages.map((msg, index) => (
-              <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[80%] p-2 rounded ${msg.role === 'user' ? 'bg-[#0066CC] text-white' : 'bg-white text-[#333333] border border-[#DDDDDD]'} ${msg.role === 'user' ? '' : 'whitespace-pre-wrap'} text-[14px]`}>
-                  {msg.role === 'user' ? (
-                    <p className="whitespace-pre-wrap">{msg.content}</p>
-                  ) : (
-                    <div 
-                      dangerouslySetInnerHTML={{ 
-                        __html: msg.content
-                          .replace(/^## ?/gm, '')  // Remove ## headers to prevent them from showing
-                          .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') 
-                      }}
-                      className="whitespace-pre-wrap"
-                    />
-                  )}
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            {messages.map((message, index) => (
+              <div key={index} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                  message.role === 'user' 
+                    ? 'bg-primary text-primary-foreground' 
+                    : 'bg-muted text-muted-foreground'
+                }`}>
+                  {message.content}
                 </div>
               </div>
             ))}
-            {isLoading && (
-              <div className="flex justify-start">
-                <div className="bg-white p-2 rounded border border-[#DDDDDD] text-[#333333]">Генерация ответа...</div>
+
+            {followUpQuestions.length > 0 && selectedFollowUp === null && (
+              <div className="p-4 bg-muted/50 rounded-lg space-y-2">
+                <p className="text-sm font-medium text-muted-foreground">Уточняющие вопросы:</p>
+                <div className="space-y-1">
+                  {followUpQuestions.map((question, index) => (
+                    <button
+                      key={index}
+                      onClick={() => {
+                        setSelectedFollowUp(question);
+                        setInput(question);
+                        setFollowUpQuestions([]); // Hide after selection
+                      }}
+                      className="w-full text-left px-3 py-2 bg-background border border-border rounded-md hover:bg-accent text-sm transition-colors"
+                    >
+                      {question}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
-            <div ref={messagesEndRef} />
+
+            {selectedFollowUp && (
+              <div className="flex justify-start">
+                <div className="max-w-xs lg:max-w-md px-4 py-2 bg-primary text-primary-foreground rounded-lg">
+                  {selectedFollowUp}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -199,7 +218,7 @@ export default function MainContentArea({ anonymousLoggedIn, onAnonymousLogin, s
             style={{ overflow: 'hidden', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}
           />
           <Button 
-            onClick={handleSend} 
+            onClick={handleSubmit} 
             disabled={!input.trim() || isLoading} 
             className="flex-shrink-0 bg-white text-[#000000] hover:bg-gray-100 border-0 rounded-none font-bold px-8 py-2 min-w-[100px] focus:outline-none focus:ring-0 focus:border-0 focus:shadow-none focus-visible:ring-0 focus-visible:shadow-none"
           >
