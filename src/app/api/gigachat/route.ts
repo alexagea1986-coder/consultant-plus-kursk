@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Exa } from "exa-js";
-import { SberRequest } from "@/lib/utils/sber-chat";
+import Exa from "exa-js";
 
 export async function POST(request: NextRequest) {
   try {
@@ -10,7 +9,7 @@ export async function POST(request: NextRequest) {
     const needsSearch = /today|current|recent|2025|update|news/i.test(message);
     
     let context = "";
-    let messageWithContext;
+    let messageWithContext = message;
     if (needsSearch) {
       const exa = new Exa(process.env.EXA_API_KEY!);
       const searchResults = await exa.search(message, {
@@ -26,11 +25,9 @@ export async function POST(request: NextRequest) {
       
       // Add to prompt
       messageWithContext = `${message}\n\nContext from web search:\n${context}`;
-    } else {
-      messageWithContext = message;
     }
 
-    // Proceed with GigaChat call using messageWithContext
+    // Proceed with GigaChat call
     const gigachatResponse = await fetch("https://gigachat.api.sber.ru/api/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -38,17 +35,21 @@ export async function POST(request: NextRequest) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: profile || "GigaChat",  // Use selected profile
+        model: profile || "GigaChat",
         messages: [{ role: "user", content: messageWithContext }],
         stream: false,
       }),
     });
 
+    if (!gigachatResponse.ok) {
+      throw new Error(`GigaChat API error: ${gigachatResponse.status}`);
+    }
+
     const data = await gigachatResponse.json();
-    const response = data.choices[0].message.content;
+    const response = data.choices[0]?.message?.content || "No response from GigaChat";
 
     // If search was used, append sources to response
-    const finalResponse = needsSearch ? `${response}\n\nИсточники: ${context}` : response;
+    const finalResponse = needsSearch ? `${response}\n\nИсточники:\n${context}` : response;
 
     return NextResponse.json({ response: finalResponse });
   } catch (error) {
