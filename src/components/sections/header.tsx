@@ -8,6 +8,7 @@ import {
   SelectValue
 } from "@/components/ui/select";
 import { Check } from "lucide-react";
+import { useMemo } from "react";
 
 interface HeaderProps {
   anonymousLoggedIn: boolean;
@@ -28,6 +29,20 @@ export default function Header({ anonymousLoggedIn, onAnonymousLogin, selectedPr
     { value: 'nta', label: 'Специалист по нормативно-техническим актам' },
     { value: 'universal_budget', label: 'Универсальный для бюджетной организации' }
   ];
+
+  const selectedLabel = useMemo(() => {
+    const profile = profiles.find(p => p.value === selectedProfile);
+    return profile ? profile.label : 'Универсальный';
+  }, [selectedProfile]);
+
+  const dynamicWidth = useMemo(() => {
+    const baseWidth = 120;
+    const charWidth = 8;
+    const maxWidth = 300;
+    const minWidth = 150;
+    const calculated = baseWidth + selectedLabel.length * charWidth;
+    return Math.max(minWidth, Math.min(maxWidth, calculated));
+  }, [selectedLabel]);
 
   const navItems = [
     { label: "Новости", href: "/news" },
@@ -53,7 +68,10 @@ export default function Header({ anonymousLoggedIn, onAnonymousLogin, selectedPr
             <div className="flex items-center mt-1">
               <span className="text-[12px] font-bold text-[#0066CC] mr-2 !whitespace-pre-line">Профиль:</span>
               <Select value={selectedProfile} onValueChange={onProfileChange}>
-                <SelectTrigger className="w-[280px] text-[12px] text-[#666666] bg-white border border-[#DDDDDD] h-7">
+                <SelectTrigger 
+                  className={`text-[12px] text-[#666666] bg-white border border-[#DDDDDD] h-7 inline-flex items-center justify-between`}
+                  style={{ width: `${dynamicWidth}px` }}
+                >
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="text-[12px]">
