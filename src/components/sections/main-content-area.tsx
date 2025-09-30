@@ -182,24 +182,24 @@ export default function MainContentArea({ anonymousLoggedIn, onAnonymousLogin, s
         
         {/* Input */}
         <div 
-          className="bg-[#FFD700] p-1 rounded w-full" 
+          className="bg-[#FFD700] p-1 rounded w-full max-w-full overflow-hidden" 
           onClick={() => textareaRef.current?.focus()}
         >
-          <div className="flex w-full border-2 border-[#B8860B] rounded-lg overflow-hidden bg-white focus-within:border-2 focus-within:border-[#B8860B] focus-within:outline-none focus-within:ring-0 focus-within:shadow-none">
+          <div className="flex w-full max-w-full min-w-0 border-2 border-[#B8860B] rounded-lg overflow-hidden bg-white focus-within:border-2 focus-within:border-[#B8860B] focus-within:outline-none focus-within:ring-0 focus-within:shadow-none flex-nowrap">
             <Textarea
               ref={textareaRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Введите ваш вопрос..."
               onKeyDown={handleKeyDown}
-              className="flex-1 text-[14px] border-0 rounded-none px-4 py-2 text-[#333333] placeholder:text-[#666666] focus:border-0 focus:ring-0 focus:outline-none focus:shadow-none focus-visible:ring-0 focus-visible:shadow-none resize-none min-h-[40px] w-full"
+              className="flex-1 min-w-0 max-w-full w-full text-[14px] border-0 rounded-none px-4 py-2 text-[#333333] placeholder:text-[#666666] focus:border-0 focus:ring-0 focus:outline-none focus:shadow-none focus-visible:ring-0 focus-visible:shadow-none resize-none min-h-[40px] break-words overflow-wrap-break-word field-sizing-fixed"
               disabled={isLoading}
-              style={{ overflow: 'hidden', width: '100%' }}
+              style={{ overflow: 'hidden', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}
             />
             <Button 
               onClick={handleSend} 
               disabled={!input.trim() || isLoading} 
-              className="bg-white text-[#000000] hover:bg-gray-100 border-0 rounded-none font-bold px-8 py-2 min-w-[100px] focus:outline-none focus:ring-0 focus:border-0 focus:shadow-none focus-visible:ring-0 focus-visible:shadow-none"
+              className="flex-shrink-0 bg-white text-[#000000] hover:bg-gray-100 border-0 rounded-none font-bold px-8 py-2 min-w-[100px] focus:outline-none focus:ring-0 focus:border-0 focus:shadow-none focus-visible:ring-0 focus-visible:shadow-none"
             >
               Найти
             </Button>
