@@ -31,7 +31,6 @@ export default function MainContentArea({ anonymousLoggedIn, onAnonymousLogin, s
           Войти без авторизации
         </Button>
       </div>);
-
   }
 
   const [messages, setMessages] = useState<Message[]>([]);
@@ -135,27 +134,27 @@ export default function MainContentArea({ anonymousLoggedIn, onAnonymousLogin, s
   };
 
   return (
-    <div className="flex flex-col h-full">
-      {hasChat ? (
-        <div className="flex-1 flex flex-col bg-white rounded-lg border border-[#DDDDDD] shadow-sm px-6 pt-2">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-[18px] font-semibold text-[#333333] flex items-center">
-              <Search className="w-5 h-5 mr-2 scale-x-[-1] stroke-[#FFD700]" strokeWidth={2} />
-              Быстрый нейропоиск
-            </h2>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={handleClear} 
-              disabled={isLoading}
-              className="text-[#666666] hover:text-[#333333] flex items-center gap-1 h-6 px-2 text-xs"
-            >
-              <Trash2 className="w-4 h-4" />
-              <span className="text-[12px]">Очистить</span>
-            </Button>
-          </div>
-          
-          <div className="flex-1 overflow-y-auto space-y-4 mb-4 p-4 bg-[#F5F5F5] rounded-lg border border-[#DDDDDD]">
+    <div className="flex flex-col h-full bg-white rounded-lg border border-[#DDDDDD] shadow-sm px-6 pt-2">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-[18px] font-semibold text-[#333333] flex items-center">
+          <Search className="w-5 h-5 mr-2 scale-x-[-1] stroke-[#FFD700]" strokeWidth={2} />
+          Быстрый нейропоиск
+        </h2>
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={handleClear} 
+          disabled={isLoading}
+          className="text-[#666666] hover:text-[#333333] flex items-center gap-1 h-6 px-2 text-xs"
+        >
+          <Trash2 className="w-4 h-4" />
+          <span className="text-[12px]">Очистить</span>
+        </Button>
+      </div>
+      
+      <div className="flex-1 mb-4">
+        {hasChat && (
+          <div className="flex-1 overflow-y-auto space-y-4 p-4 bg-[#F5F5F5] rounded-lg border border-[#DDDDDD]">
             {messages.map((msg, index) => (
               <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-[80%] p-2 rounded ${msg.role === 'user' ? 'bg-[#0066CC] text-white' : 'bg-white text-[#333333] border border-[#DDDDDD]'} ${msg.role === 'user' ? '' : 'whitespace-pre-wrap'} text-[14px]`}>
@@ -179,60 +178,33 @@ export default function MainContentArea({ anonymousLoggedIn, onAnonymousLogin, s
             )}
             <div ref={messagesEndRef} />
           </div>
-          
-          <div 
-            className="bg-[#FFD700] p-1 rounded w-full max-w-full overflow-hidden" 
-            onClick={() => textareaRef.current?.focus()}
+        )}
+      </div>
+      
+      <div 
+        className="bg-[#FFD700] p-1 rounded w-full max-w-full overflow-hidden" 
+        onClick={() => textareaRef.current?.focus()}
+      >
+        <div className="flex w-full max-w-full min-w-0 border-2 border-[#B8860B] rounded-lg overflow-hidden bg-white focus-within:border-2 focus-within:border-[#B8860B] focus-within:outline-none focus-within:ring-0 focus-within:shadow-none flex-nowrap">
+          <Textarea
+            ref={textareaRef}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Введите ваш вопрос..."
+            onKeyDown={handleKeyDown}
+            className="flex-1 min-w-0 max-w-full w-full text-[14px] border-0 rounded-none px-4 py-2 text-[#333333] placeholder:text-[#666666] focus:border-0 focus:ring-0 focus:outline-none focus:shadow-none focus-visible:ring-0 focus-visible:shadow-none resize-none min-h-[40px] break-words overflow-wrap-break-word field-sizing-fixed"
+            disabled={isLoading}
+            style={{ overflow: 'hidden', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}
+          />
+          <Button 
+            onClick={handleSend} 
+            disabled={!input.trim() || isLoading} 
+            className="flex-shrink-0 bg-white text-[#000000] hover:bg-gray-100 border-0 rounded-none font-bold px-8 py-2 min-w-[100px] focus:outline-none focus:ring-0 focus:border-0 focus:shadow-none focus-visible:ring-0 focus-visible:shadow-none"
           >
-            <div className="flex w-full max-w-full min-w-0 border-2 border-[#B8860B] rounded-lg overflow-hidden bg-white focus-within:border-2 focus-within:border-[#B8860B] focus-within:outline-none focus-within:ring-0 focus-within:shadow-none flex-nowrap">
-              <Textarea
-                ref={textareaRef}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="Введите ваш вопрос..."
-                onKeyDown={handleKeyDown}
-                className="flex-1 min-w-0 max-w-full w-full text-[14px] border-0 rounded-none px-4 py-2 text-[#333333] placeholder:text-[#666666] focus:border-0 focus:ring-0 focus:outline-none focus:shadow-none focus-visible:ring-0 focus-visible:shadow-none resize-none min-h-[40px] break-words overflow-wrap-break-word field-sizing-fixed"
-                disabled={isLoading}
-                style={{ overflow: 'hidden', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}
-              />
-              <Button 
-                onClick={handleSend} 
-                disabled={!input.trim() || isLoading} 
-                className="flex-shrink-0 bg-white text-[#000000] hover:bg-gray-100 border-0 rounded-none font-bold px-8 py-2 min-w-[100px] focus:outline-none focus:ring-0 focus:border-0 focus:shadow-none focus-visible:ring-0 focus-visible:shadow-none"
-              >
-                Найти
-              </Button>
-            </div>
-          </div>
+            Найти
+          </Button>
         </div>
-      ) : (
-        <div className="flex-1 flex flex-col justify-end">
-          <div 
-            className="bg-[#FFD700] p-1 rounded w-full max-w-full overflow-hidden" 
-            onClick={() => textareaRef.current?.focus()}
-          >
-            <div className="flex w-full max-w-full min-w-0 border-2 border-[#B8860B] rounded-lg overflow-hidden bg-white focus-within:border-2 focus-within:border-[#B8860B] focus-within:outline-none focus-within:ring-0 focus-within:shadow-none flex-nowrap">
-              <Textarea
-                ref={textareaRef}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="Введите ваш вопрос..."
-                onKeyDown={handleKeyDown}
-                className="flex-1 min-w-0 max-w-full w-full text-[14px] border-0 rounded-none px-4 py-2 text-[#333333] placeholder:text-[#666666] focus:border-0 focus:ring-0 focus:outline-none focus:shadow-none focus-visible:ring-0 focus-visible:shadow-none resize-none min-h-[40px] break-words overflow-wrap-break-word field-sizing-fixed"
-                disabled={isLoading}
-                style={{ overflow: 'hidden', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}
-              />
-              <Button 
-                onClick={handleSend} 
-                disabled={!input.trim() || isLoading} 
-                className="flex-shrink-0 bg-white text-[#000000] hover:bg-gray-100 border-0 rounded-none font-bold px-8 py-2 min-w-[100px] focus:outline-none focus:ring-0 focus:border-0 focus:shadow-none focus-visible:ring-0 focus-visible:shadow-none"
-              >
-                Найти
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      </div>
     </div>
   );
 }
