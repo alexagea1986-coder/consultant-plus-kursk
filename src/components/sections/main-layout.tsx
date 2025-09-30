@@ -1,6 +1,7 @@
 "use client"
 
 import { ReactNode, useState, useRef, useEffect, useCallback } from "react"
+import { GripVertical } from "lucide-react"
 
 interface MainLayoutProps {
   newsSidebar: ReactNode
@@ -105,36 +106,58 @@ export default function MainLayout({ newsSidebar, aiSearch, additionalServices }
     };
   }, [isDragging, handleMouseMove, handleMouseUp]);
 
+  const handleMouseEnter = useCallback(() => {
+    if (!isDragging) {
+      document.body.style.cursor = 'col-resize';
+    }
+  }, [isDragging]);
+
+  const handleMouseLeave = useCallback(() => {
+    if (!isDragging) {
+      document.body.style.cursor = 'default';
+    }
+  }, [isDragging]);
+
   return (
     <div className="bg-white min-h-screen">
       <div className="w-full max-w-[1400px] mx-auto px-2 sm:px-4 lg:px-6 py-3">
-        <div ref={containerRef} className="flex flex-col lg:flex-row gap-4 lg:gap-0 h-full">
+        <div ref={containerRef} className="flex flex-col lg:flex-row gap-0 h-[calc(100vh-200px)]">
           <div 
             ref={leftRef} 
-            className="h-full w-full lg:flex-none" 
-            style={{ width: isLg ? `${leftPercent}%` : '100%' }}
+            className="h-full w-full lg:flex-none overflow-hidden" 
+            style={{ flexBasis: isLg ? `${leftPercent}%` : '100%' }}
           >
             {newsSidebar}
           </div>
           <div 
-            className="hidden lg:flex-none lg:block w-2 h-full bg-gray-200 cursor-col-resize hover:bg-gray-300"
+            className="hidden lg:block lg:flex-none w-8 h-full bg-gray-100 cursor-col-resize flex items-center justify-center relative group hover:bg-primary/10 transition-colors duration-150 z-10"
+            title="Drag to resize left and center panels"
             onMouseDown={(e) => startDrag(1, e)}
-          />
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+          >
+            <GripVertical className="h-6 w-4 text-gray-500 group-hover:text-primary transition-colors duration-150" />
+          </div>
           <div 
             ref={middleRef} 
-            className="h-full w-full lg:flex-none" 
-            style={{ width: isLg ? `${middlePercent}%` : '100%' }}
+            className="h-full w-full lg:flex-none overflow-hidden" 
+            style={{ flexBasis: isLg ? `${middlePercent}%` : '100%' }}
           >
             {aiSearch}
           </div>
           <div 
-            className="hidden lg:flex-none lg:block w-2 h-full bg-gray-200 cursor-col-resize hover:bg-gray-300"
+            className="hidden lg:block lg:flex-none w-8 h-full bg-gray-100 cursor-col-resize flex items-center justify-center relative group hover:bg-primary/10 transition-colors duration-150 z-10"
+            title="Drag to resize center and right panels"
             onMouseDown={(e) => startDrag(2, e)}
-          />
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+          >
+            <GripVertical className="h-6 w-4 text-gray-500 group-hover:text-primary transition-colors duration-150" />
+          </div>
           <div 
             ref={rightRef} 
-            className="h-full w-full lg:flex-none" 
-            style={{ width: isLg ? `${rightPercent}%` : '100%' }}
+            className="h-full w-full lg:flex-none overflow-hidden" 
+            style={{ flexBasis: isLg ? `${rightPercent}%` : '100%' }}
           >
             {additionalServices}
           </div>
