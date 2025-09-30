@@ -81,8 +81,8 @@ export async function GET() {
     }
 
     // Define profiles and keywords
-    const profiles = {
-      universal: [],
+    const profiles: Record<string, string[]> = {
+      universal: [] as string[],
       accounting_hr: ['бухгалтерия', 'кадры', 'налог', 'зарплата', 'НДС', 'бухучет'],
       lawyer: ['юрист', 'суд', 'закон', 'ВС РФ', 'права'],
       budget_accounting: ['бюджет', 'государственная организация', 'финансы', 'казна'],
@@ -102,7 +102,7 @@ export async function GET() {
     // For each other profile
     Object.keys(profiles).forEach(profile => {
       if (profile === 'universal') return
-      const keywords = profiles[profile]
+      const keywords = profiles[profile] as string[]
       const filtered = uniqueNews.filter(item =>
         keywords.some(kw =>
           item.title.toLowerCase().includes(kw.toLowerCase()) ||
