@@ -5,8 +5,8 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
-} from "@/components/ui/select";
+  SelectValue } from
+"@/components/ui/select";
 import { Check } from "lucide-react";
 import { useMemo } from "react";
 
@@ -19,19 +19,19 @@ interface HeaderProps {
 
 export default function Header({ anonymousLoggedIn, onAnonymousLogin, selectedProfile, onProfileChange }: HeaderProps) {
   const profiles = [
-    { value: 'universal', label: 'Универсальный' },
-    { value: 'accounting_hr', label: 'Бухгалтерия и кадры' },
-    { value: 'lawyer', label: 'Юрист' },
-    { value: 'budget_accounting', label: 'Бухгалтерия и кадры бюджетной организации' },
-    { value: 'procurements', label: 'Специалист по закупкам' },
-    { value: 'hr', label: 'Кадры' },
-    { value: 'labor_safety', label: 'Специалист по охране труда' },
-    { value: 'nta', label: 'Специалист по нормативно-техническим актам' },
-    { value: 'universal_budget', label: 'Универсальный для бюджетной организации' }
-  ];
+  { value: 'universal', label: 'Универсальный' },
+  { value: 'accounting_hr', label: 'Бухгалтерия и кадры' },
+  { value: 'lawyer', label: 'Юрист' },
+  { value: 'budget_accounting', label: 'Бухгалтерия и кадры бюджетной организации' },
+  { value: 'procurements', label: 'Специалист по закупкам' },
+  { value: 'hr', label: 'Кадры' },
+  { value: 'labor_safety', label: 'Специалист по охране труда' },
+  { value: 'nta', label: 'Специалист по нормативно-техническим актам' },
+  { value: 'universal_budget', label: 'Универсальный для бюджетной организации' }];
+
 
   const selectedLabel = useMemo(() => {
-    const profile = profiles.find(p => p.value === selectedProfile);
+    const profile = profiles.find((p) => p.value === selectedProfile);
     return profile ? profile.label : 'Универсальный';
   }, [selectedProfile]);
 
@@ -45,11 +45,11 @@ export default function Header({ anonymousLoggedIn, onAnonymousLogin, selectedPr
   }, [selectedLabel]);
 
   const navItems = [
-    { label: "Новости", href: "/news" },
-    { label: "Продукты", href: "/products" },
-    { label: "О компании", href: "/about" },
-    { label: "Контакты", href: "/contacts" }
-  ];
+  { label: "Новости", href: "/news" },
+  { label: "Продукты", href: "/products" },
+  { label: "О компании", href: "/about" },
+  { label: "Контакты", href: "/contacts" }];
+
 
   return (
     <header className="bg-white border-b border-gray-200 shadow-sm px-4 py-2">
@@ -64,21 +64,21 @@ export default function Header({ anonymousLoggedIn, onAnonymousLogin, selectedPr
             className="mr-3" />
 
           <div>
-            <span className="text-xl font-bold text-[#0066CC] whitespace-pre-line block">Инфо-Комплекс Плюс</span>
+            <span className="text-xl font-bold text-[#0066CC] whitespace-pre-line block !whitespace-pre-line">НейроконсультантПлюс</span>
             <div className="flex items-center mt-1">
               <span className="text-[12px] font-bold text-[#0066CC] mr-2 !whitespace-pre-line">Профиль:</span>
               <Select value={selectedProfile} onValueChange={onProfileChange}>
-                <SelectTrigger 
-                  className="text-[12px] text-[#666666] bg-white h-7 inline-flex items-center justify-between px-2"
-                >
+                <SelectTrigger
+                  className="text-[12px] text-[#666666] bg-white h-7 inline-flex items-center justify-between px-2">
+
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="text-[12px]">
-                  {profiles.map((profile) => (
-                    <SelectItem key={profile.value} value={profile.value} className="text-[12px] flex items-center">
+                  {profiles.map((profile) =>
+                  <SelectItem key={profile.value} value={profile.value} className="text-[12px] flex items-center">
                       <span className="flex-1">{profile.label}</span>
                     </SelectItem>
-                  ))}
+                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -89,26 +89,26 @@ export default function Header({ anonymousLoggedIn, onAnonymousLogin, selectedPr
         <nav className="hidden md:flex items-center space-x-8">
           <a
             href="/news"
-            className="text-[14px] font-medium text-[#0066CC] hover:text-[#FFD700] transition-colors duration-200 no-underline"
-          >
+            className="text-[14px] font-medium text-[#0066CC] hover:text-[#FFD700] transition-colors duration-200 no-underline">
+
             Новости
           </a>
           <a
             href="/products"
-            className="text-[14px] font-medium text-[#0066CC] hover:text-[#FFD700] transition-colors duration-200 no-underline"
-          >
+            className="text-[14px] font-medium text-[#0066CC] hover:text-[#FFD700] transition-colors duration-200 no-underline">
+
             Продукты
           </a>
           <a
             href="/about"
-            className="text-[14px] font-medium text-[#0066CC] hover:text-[#FFD700] transition-colors duration-200 no-underline"
-          >
+            className="text-[14px] font-medium text-[#0066CC] hover:text-[#FFD700] transition-colors duration-200 no-underline">
+
             О компании
           </a>
           <a
             href="/contacts"
-            className="text-[14px] font-medium text-[#0066CC] hover:text-[#FFD700] transition-colors duration-200 no-underline"
-          >
+            className="text-[14px] font-medium text-[#0066CC] hover:text-[#FFD700] transition-colors duration-200 no-underline">
+
             Контакты
           </a>
         </nav>
@@ -118,6 +118,6 @@ export default function Header({ anonymousLoggedIn, onAnonymousLogin, selectedPr
           <a href="tel:+74712526969" className="hover:text-[#0066CC]">тел. (4712) 52-69-69</a>
         </div>
       </div>
-    </header>
-  );
+    </header>);
+
 }
