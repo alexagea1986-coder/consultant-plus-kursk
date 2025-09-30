@@ -80,7 +80,10 @@ async function ollama_search(query: string, top_k: number = 5): Promise<string> 
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${OLLAMA_KEY}`,
       },
-      body: JSON.stringify({ query: `${query} site:consultant.ru OR site:pravo.gov.ru OR site:garant.ru OR site:duma.gov.ru OR site:council.gov.ru OR site:government.ru OR site:fns.ru`, max_results: top_k }),
+      body: JSON.stringify({ 
+        query: `${query} site:consultant.ru OR site:pravo.gov.ru OR site:garant.ru OR site:duma.gov.ru OR site:council.gov.ru OR site:government.ru OR site:fns.ru OR site:gosuslugi.ru OR site:cbr.ru`, 
+        max_results: top_k 
+      }),
     });
 
     if (!response.ok) {
@@ -92,7 +95,7 @@ async function ollama_search(query: string, top_k: number = 5): Promise<string> 
     const items = data.results || [];
 
     // Prioritize official Russian sites
-    const officialDomains = ['consultant.ru', 'pravo.gov.ru', 'garant.ru', 'duma.gov.ru', 'council.gov.ru', 'government.ru', 'fns.ru', 'gosuslugi.ru'];
+    const officialDomains = ['consultant.ru', 'pravo.gov.ru', 'garant.ru', 'duma.gov.ru', 'council.gov.ru', 'government.ru', 'fns.ru', 'gosuslugi.ru', 'cbr.ru'];
     const prioritizedItems = items.filter(item => 
       officialDomains.some(domain => item.url.includes(domain))
     ).concat(items.filter(item => 
