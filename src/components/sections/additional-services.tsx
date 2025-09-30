@@ -3,7 +3,7 @@
 export default function AdditionalServices() {
   return (
     <div className="bg-white rounded-lg border border-[#DDDDDD] shadow-sm px-2 pt-2 pb-2 h-full flex flex-col">
-      <h3 className="text-[18px] font-semibold text-[#333333] mb-2 flex-shrink-0">Дополнительные сервисы</h3>
+      <h3 className="text-[18px] font-semibold text-[#333333] mb-2 flex-shrink-0">Сервисы</h3>
       <div className="space-y-1 flex-1">
         <a 
           href="https://cpcd.consultant.ru/production/?selectTab=policies" 
