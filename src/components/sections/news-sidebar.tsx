@@ -117,16 +117,16 @@ export default function NewsSidebar({ anonymousLoggedIn, selectedProfile }: News
           <a
             key={index}
             href={item.link}
-            className="block p-1 bg-white rounded border border-[#DDDDDD] hover:bg-[#F5F5F5] transition-colors no-underline"
+            className="block p-2 bg-white rounded border border-[#DDDDDD] hover:bg-[#F5F5F5] transition-colors no-underline"
             target="_blank"
             rel="noopener noreferrer"
           >
-            <div className="flex items-center mb-1">
-              <Calendar className="w-4 h-4 text-[#666666] mr-2" />
-              <span className="text-[12px] text-[#666666]">{item.date}</span>
+            <div className="flex items-center mb-2">
+              <Calendar className="w-4 h-4 text-[#666666] mr-2 flex-shrink-0" />
+              <span className="text-xs text-[#666666] leading-tight">{item.date}</span>
             </div>
-            <h3 className="text-[14px] font-semibold text-[#0066CC] hover:underline line-clamp-2">{item.title}</h3>
-            <p className="text-[12px] text-[#666666] mt-1 line-clamp-1">{item.description}</p>
+            <h3 className="text-sm font-normal text-[#0066CC] leading-relaxed line-clamp-2 mb-2 hover:underline">{item.title}</h3>
+            <p className="text-xs text-[#666666] leading-tight line-clamp-2">{item.description}</p>
           </a>
         ))}
         {filteredNews.length === 0 && (
