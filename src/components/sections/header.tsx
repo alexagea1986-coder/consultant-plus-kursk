@@ -22,7 +22,7 @@ export default function Header({ anonymousLoggedIn, onAnonymousLogin }: HeaderPr
   ];
 
   return (
-    <header className="bg-white border-b border-gray-200 shadow-sm px-4 py-3">
+    <header className="bg-white border-b border-gray-200 shadow-sm px-4 py-2">
       <div className="max-w-6xl mx-auto flex items-center justify-between">
         {/* Logo */}
         <div className="flex items-center">
@@ -79,8 +79,6 @@ export default function Header({ anonymousLoggedIn, onAnonymousLogin }: HeaderPr
             <div className="space-y-1">
               <a href="tel:+74712526969" className="block hover:text-[#0066CC]">тел. (4712) 52-69-69</a>
               <a href="tel:+78002000527" className="block hover:text-[#0066CC]">тел. 8-800-200-05-27</a>
-              <a href="https://forms.amocrm.ru/crwmmc" className="block text-xs text-[#0066CC] hover:text-[#FFD700] transition-colors duration-200" target="_blank" rel="noopener noreferrer">Бесплатное подключение КонсультантПлюс</a>
-              <p className="text-xs">Адрес: 305016, г. Курск, ул. Щепкина, д. 20, нежилое помещение V</p>
             </div>
           </div>
         </div>
