@@ -88,22 +88,22 @@ export default function NewsSidebar({ anonymousLoggedIn, selectedProfile: propSe
   }, [selectedProfile, profileNews])
 
   if (!anonymousLoggedIn) {
-    return <div className="bg-[#F5F5F5] rounded-md p-4"></div>
+    return <div className="bg-[#F5F5F5] rounded-md p-2 h-full"></div>
   }
 
   if (loading) {
     return (
-      <div className="bg-[#F5F5F5] rounded-md p-4 space-y-4">
-        <div className="flex items-center justify-between mb-4">
+      <div className="bg-[#F5F5F5] rounded-md p-1 space-y-1 h-full flex flex-col">
+        <div className="flex items-center justify-between mb-1">
           <div className="flex items-center">
             <div className="w-5 h-5 bg-gray-300 rounded mr-2 animate-pulse"></div>
             <div className="h-5 bg-gray-300 rounded w-20 animate-pulse"></div>
           </div>
           <div className="h-6 bg-gray-300 rounded w-32 animate-pulse"></div>
         </div>
-        <div className="space-y-3">
+        <div className="space-y-1">
           {[...Array(5)].map((_, i) => (
-            <div key={i} className="p-3 bg-white rounded border animate-pulse">
+            <div key={i} className="p-1 bg-white rounded border animate-pulse">
               <div className="flex items-center mb-1">
                 <div className="w-4 h-4 bg-gray-300 rounded mr-2"></div>
                 <div className="h-3 bg-gray-300 rounded w-20"></div>
@@ -119,19 +119,16 @@ export default function NewsSidebar({ anonymousLoggedIn, selectedProfile: propSe
 
   if (error) {
     return (
-      <div className="bg-[#F5F5F5] rounded-md p-4 space-y-4">
-        <div className="text-red-500 text-sm">Ошибка: {error}</div>
+      <div className="bg-[#F5F5F5] rounded-md p-1 space-y-1 h-full flex flex-col justify-center">
+        <div className="text-red-500 text-sm">{error}</div>
       </div>
     )
   }
 
   return (
-    <div className="bg-[#F5F5F5] rounded-md p-4 space-y-4">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center">
-          <Calendar className="w-5 h-5 text-[#0066CC] mr-2" />
-          <h2 className="text-[18px] font-semibold text-[#333333]">Новости</h2>
-        </div>
+    <div className="bg-[#F5F5F5] rounded-md p-1 space-y-1 h-full flex flex-col">
+      <div className="flex items-center mb-2">
+        <span className="text-[14px] font-medium text-[#333333] mr-2">Профиль</span>
         <select 
           value={selectedProfile} 
           onChange={(e) => setSelectedProfile(e.target.value)}
@@ -144,13 +141,19 @@ export default function NewsSidebar({ anonymousLoggedIn, selectedProfile: propSe
           ))}
         </select>
       </div>
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center">
+          <Calendar className="w-5 h-5 text-[#0066CC] mr-2" />
+          <h2 className="text-[18px] font-semibold text-[#333333]">Новости</h2>
+        </div>
+      </div>
 
-      <div className="space-y-3">
-        {filteredNews.slice(0, 7).map((item, index) => (
+      <div className="space-y-1">
+        {filteredNews.slice(0, 5).map((item, index) => (
           <a
             key={index}
             href={item.link}
-            className="block p-3 bg-white rounded border border-[#DDDDDD] hover:bg-[#F5F5F5] transition-colors no-underline"
+            className="block p-1 bg-white rounded border border-[#DDDDDD] hover:bg-[#F5F5F5] transition-colors no-underline"
             target="_blank"
             rel="noopener noreferrer"
           >
@@ -163,11 +166,11 @@ export default function NewsSidebar({ anonymousLoggedIn, selectedProfile: propSe
           </a>
         ))}
         {filteredNews.length === 0 && (
-          <p className="text-[#666666] text-center py-4">Новости не найдены для выбранного профиля</p>
+          <p className="text-[#666666] text-center py-1">Новости не найдены для выбранного профиля</p>
         )}
       </div>
 
-      <div className="pt-2 border-t border-[#DDDDDD]">
+      <div className="pt-1 border-t border-[#DDDDDD]">
         <a href="https://www.consultant.ru/legalnews/" className="text-[14px] text-[#0066CC] hover:underline block">
           Все новости →
         </a>
