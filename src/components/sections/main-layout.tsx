@@ -173,13 +173,13 @@ export default function MainLayout({ newsSidebar, aiSearch, additionalServices }
             {newsSidebar}
           </div>
           <div 
-            className="hidden lg:block lg:flex-none w-[0.1875px] h-full bg-gray-100 cursor-col-resize flex items-center justify-center relative group hover:bg-primary/10 transition-colors duration-150 z-10"
+            className="hidden lg:block lg:flex-none w-[0.1875px] h-full bg-blue-50 cursor-col-resize flex items-center justify-center relative group hover:bg-blue-100 transition-colors duration-150 z-10"
             title="Drag to resize left and center panels"
             onMouseDown={(e) => startDrag(1, e)}
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
           >
-            <GripVertical className="h-[0.375px] w-[0.0625px] text-gray-500 group-hover:text-primary transition-colors duration-150" />
+            <GripVertical className="h-[0.375px] w-[0.0625px] text-blue-400 group-hover:text-blue-600 transition-colors duration-150" />
           </div>
           <div 
             ref={middleRef} 
@@ -189,13 +189,13 @@ export default function MainLayout({ newsSidebar, aiSearch, additionalServices }
             {aiSearch}
           </div>
           <div 
-            className="hidden lg:block lg:flex-none w-[0.1875px] h-full bg-gray-100 cursor-col-resize flex items-center justify-center relative group hover:bg-primary/10 transition-colors duration-150 z-10"
+            className="hidden lg:block lg:flex-none w-[0.1875px] h-full bg-blue-50 cursor-col-resize flex items-center justify-center relative group hover:bg-blue-100 transition-colors duration-150 z-10"
             title="Drag to resize center and right panels"
             onMouseDown={(e) => startDrag(2, e)}
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
           >
-            <GripVertical className="h-[0.375px] w-[0.0625px] text-gray-500 group-hover:text-primary transition-colors duration-150" />
+            <GripVertical className="h-[0.375px] w-[0.0625px] text-blue-400 group-hover:text-blue-600 transition-colors duration-150" />
           </div>
           <div 
             ref={rightRef} 
