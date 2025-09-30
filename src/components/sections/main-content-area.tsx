@@ -133,15 +133,12 @@ export default function MainContentArea({ anonymousLoggedIn, onAnonymousLogin, s
     return { mainContent, followUps };
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim()) return;
-
-    const newMessages = [...messages, { role: 'user', content: input }];
+  const sendMessage = async (userMessage: string) => {
+    const newMessages = [...messages, { role: 'user', content: userMessage }];
     setMessages(newMessages);
-    setInput('');
     setFollowUpQuestions([]);
-
+    setInput('');
+    
     try {
       setIsLoading(true);
       const response = await fetch('/api/gigachat', {
@@ -165,6 +162,13 @@ export default function MainContentArea({ anonymousLoggedIn, onAnonymousLogin, s
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim()) return;
+
+    await sendMessage(input);
   };
 
   // Auto-resize textarea
@@ -254,12 +258,8 @@ export default function MainContentArea({ anonymousLoggedIn, onAnonymousLogin, s
                     {followUpQuestions.map((question, index) => (
                       <button
                         key={index}
-                        onClick={async () => {
-                          const followUpInput = question;
-                          setInput(followUpInput);
-                          const e = { preventDefault: () => {} } as React.FormEvent;
-                          await handleSubmit(e);
-                          setFollowUpQuestions([]);
+                        onClick={() => {
+                          sendMessage(question);
                         }}
                         className="w-full text-left px-3 py-2 bg-background border border-border rounded-md hover:bg-accent text-sm transition-colors text-[#333333]"
                       >
