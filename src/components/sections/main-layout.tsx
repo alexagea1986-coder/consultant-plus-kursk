@@ -162,44 +162,44 @@ export default function MainLayout({ newsSidebar, aiSearch, additionalServices }
   }, [isDragging]);
 
   return (
-    <div className="bg-white min-h-screen">
-      <div className="w-full max-w-[1400px] mx-auto px-2 sm:px-4 lg:px-6 py-3">
-        <div ref={containerRef} className="flex flex-col lg:flex-row gap-0 h-[calc(100vh-200px)]">
+    <div className="bg-white flex-1">
+      <div className="w-full max-w-[1400px] mx-auto px-2 sm:px-4 lg:px-6 flex flex-col lg:flex-row h-full">
+        <div ref={containerRef} className="flex flex-col lg:flex-row gap-0 flex-1 h-full">
           <div 
             ref={leftRef} 
-            className="h-full w-full lg:flex-none overflow-hidden" 
+            className="h-full w-full lg:flex-none overflow-y-auto" 
             style={{ flexBasis: isLg ? `${leftPercent}%` : '100%' }}
           >
             {newsSidebar}
           </div>
           <div 
-            className="hidden lg:block lg:flex-none w-3 h-full bg-gray-100 cursor-col-resize flex items-center justify-center relative group hover:bg-primary/10 transition-colors duration-150 z-10"
+            className="hidden lg:block lg:flex-none w-[0.1875px] h-full bg-gray-100 cursor-col-resize flex items-center justify-center relative group hover:bg-primary/10 transition-colors duration-150 z-10"
             title="Drag to resize left and center panels"
             onMouseDown={(e) => startDrag(1, e)}
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
           >
-            <GripVertical className="h-5 w-2 text-gray-500 group-hover:text-primary transition-colors duration-150" />
+            <GripVertical className="h-[0.375px] w-[0.0625px] text-gray-500 group-hover:text-primary transition-colors duration-150" />
           </div>
           <div 
             ref={middleRef} 
-            className="h-full w-full lg:flex-none overflow-hidden" 
+            className="h-full w-full lg:flex-none overflow-y-auto" 
             style={{ flexBasis: isLg ? `${middlePercent}%` : '100%' }}
           >
             {aiSearch}
           </div>
           <div 
-            className="hidden lg:block lg:flex-none w-3 h-full bg-gray-100 cursor-col-resize flex items-center justify-center relative group hover:bg-primary/10 transition-colors duration-150 z-10"
+            className="hidden lg:block lg:flex-none w-[0.1875px] h-full bg-gray-100 cursor-col-resize flex items-center justify-center relative group hover:bg-primary/10 transition-colors duration-150 z-10"
             title="Drag to resize center and right panels"
             onMouseDown={(e) => startDrag(2, e)}
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
           >
-            <GripVertical className="h-5 w-2 text-gray-500 group-hover:text-primary transition-colors duration-150" />
+            <GripVertical className="h-[0.375px] w-[0.0625px] text-gray-500 group-hover:text-primary transition-colors duration-150" />
           </div>
           <div 
             ref={rightRef} 
-            className="h-full w-full lg:flex-none overflow-hidden" 
+            className="h-full w-full lg:flex-none overflow-y-auto" 
             style={{ flexBasis: isLg ? `${rightPercent}%` : '100%' }}
           >
             {additionalServices}
