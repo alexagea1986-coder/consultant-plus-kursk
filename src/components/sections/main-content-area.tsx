@@ -165,7 +165,7 @@ export default function MainContentArea({ anonymousLoggedIn, onAnonymousLogin, s
             onChange={(e) => setInput(e.target.value)}
             placeholder="Введите ваш вопрос..."
             onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-            className="flex-1 text-[14px] bg-transparent border-none focus:border-none focus:ring-0 px-0 text-white placeholder:text-white/70"
+            className="flex-1 text-[14px] bg-white border border-[#DDDDDD] rounded px-3 py-1 text-[#333333] placeholder:text-[#666666] focus:border-[#0066CC] focus:ring-0"
             disabled={isLoading} 
           />
           <Button 
