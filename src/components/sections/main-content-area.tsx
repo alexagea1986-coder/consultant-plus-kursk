@@ -5,6 +5,9 @@ import { BookOpen, MessageCircle, Send, Trash2, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
 
 interface MainContentAreaProps {
   anonymousLoggedIn: boolean;
@@ -81,6 +84,8 @@ export default function MainContentArea({ anonymousLoggedIn, onAnonymousLogin, s
     const newMessages = [...messages, { role: 'user', content: input }];
     setMessages(newMessages);
     setInput('');
+    setFollowUpQuestions([]);
+    setSelectedFollowUp(null);
 
     try {
       setIsLoading(true);
@@ -96,19 +101,16 @@ export default function MainContentArea({ anonymousLoggedIn, onAnonymousLogin, s
 
       // Parse follow-up questions from the end of the response
       const lines = content.split('\n');
-      const questionStartIndex = lines.findIndex(line => line.startsWith('Возможные уточняющие вопросы:'));
+      const questionStartIndex = lines.findIndex(line => line.startsWith('Возможные уточняющие вопросы:') || line.startsWith('Уточняющие вопросы:'));
       let newFollowUps: string[] = [];
+      let mainContent = content;
       if (questionStartIndex !== -1) {
-        newFollowUps = lines.slice(questionStartIndex + 1).filter(line => line.trim()).map(line => line.replace(/^\d+\.\s*/, ''));
-        // Remove the follow-up section from the main content
-        const mainContent = lines.slice(0, questionStartIndex).join('\n');
-        setMessages([...newMessages, { role: 'assistant', content: mainContent.trim() }]);
-      } else {
-        setMessages([...newMessages, { role: 'assistant', content }]);
+        newFollowUps = lines.slice(questionStartIndex + 1).filter(line => line.trim() && !line.startsWith('---')).map(line => line.replace(/^\d+\.\s*/g, '').trim());
+        mainContent = lines.slice(0, questionStartIndex).join('\n').trim();
       }
 
+      setMessages([...newMessages, { role: 'assistant', content: mainContent }]);
       setFollowUpQuestions(newFollowUps);
-      setSelectedFollowUp(null);
 
     } catch (error) {
       console.error('Chat error:', error);
@@ -158,18 +160,6 @@ export default function MainContentArea({ anonymousLoggedIn, onAnonymousLogin, s
       <div className="flex-1 mb-4">
         {hasChat && (
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {messages.map((message, index) => (
-              <div key={index} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                  message.role === 'user' 
-                    ? 'bg-primary text-primary-foreground' 
-                    : 'bg-muted text-muted-foreground'
-                }`}>
-                  {message.content}
-                </div>
-              </div>
-            ))}
-
             {followUpQuestions.length > 0 && selectedFollowUp === null && (
               <div className="p-4 bg-muted/50 rounded-lg space-y-2">
                 <p className="text-sm font-medium text-muted-foreground">Уточняющие вопросы:</p>
@@ -177,10 +167,12 @@ export default function MainContentArea({ anonymousLoggedIn, onAnonymousLogin, s
                   {followUpQuestions.map((question, index) => (
                     <button
                       key={index}
-                      onClick={() => {
-                        setSelectedFollowUp(question);
-                        setInput(question);
-                        setFollowUpQuestions([]); // Hide after selection
+                      onClick={async () => {
+                        const followUpInput = question;
+                        setInput(followUpInput);
+                        // Auto-submit
+                        const e = { preventDefault: () => {} } as React.FormEvent;
+                        await handleSubmit(e);
                       }}
                       className="w-full text-left px-3 py-2 bg-background border border-border rounded-md hover:bg-accent text-sm transition-colors"
                     >
@@ -190,6 +182,45 @@ export default function MainContentArea({ anonymousLoggedIn, onAnonymousLogin, s
                 </div>
               </div>
             )}
+
+            {isLoading && !selectedFollowUp && (
+              <div className="flex justify-start p-4">
+                <div className="max-w-xs lg:max-w-md px-4 py-2 bg-muted text-muted-foreground rounded-lg animate-pulse">
+                  <div className="flex items-center gap-2">
+                    <div className="w-5 h-5 bg-muted-foreground/30 rounded-full animate-spin"></div>
+                    Ищу информацию...
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {messages.map((message, index) => (
+              <div key={index} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                  message.role === 'user' 
+                    ? 'bg-primary text-primary-foreground' 
+                    : 'bg-muted text-muted-foreground'
+                }`}>
+                  {message.role === 'assistant' ? (
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      rehypePlugins={[rehypeRaw]}
+                      components={{
+                        strong: ({ children }) => <strong className="font-bold">{children}</strong>,
+                        p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                        ul: ({ children }) => <ul className="list-disc ml-4 mb-2">{children}</ul>,
+                        ol: ({ children }) => <ol className="list-decimal ml-4 mb-2">{children}</ol>,
+                        li: ({ children }) => <li className="mb-1">{children}</li>,
+                      }}
+                    >
+                      {message.content}
+                    </ReactMarkdown>
+                  ) : (
+                    message.content
+                  )}
+                </div>
+              </div>
+            ))}
 
             {selectedFollowUp && (
               <div className="flex justify-start">
