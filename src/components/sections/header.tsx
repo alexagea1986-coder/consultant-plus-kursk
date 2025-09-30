@@ -5,8 +5,9 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue 
+  SelectValue
 } from "@/components/ui/select";
+import { Check } from "lucide-react";
 
 interface HeaderProps {
   anonymousLoggedIn: boolean;
@@ -50,18 +51,19 @@ export default function Header({ anonymousLoggedIn, onAnonymousLogin, selectedPr
           <div>
             <span className="text-xl font-bold text-[#0066CC] whitespace-pre-line block">Инфо-Комплекс Плюс</span>
             <div className="flex items-center mt-1">
-              <span className="text-[12px] font-bold text-[#0066CC] mr-2">Профиль</span>
-              <select 
-                value={selectedProfile} 
-                onChange={(e) => onProfileChange(e.target.value)}
-                className="text-[12px] text-[#666666] bg-white"
-              >
-                {profiles.map((profile) => (
-                  <option key={profile.value} value={profile.value}>
-                    {profile.label}
-                  </option>
-                ))}
-              </select>
+              <span className="text-[12px] font-bold text-[#0066CC] mr-2 !whitespace-pre-line">Профиль:</span>
+              <Select value={selectedProfile} onValueChange={onProfileChange}>
+                <SelectTrigger className="w-[280px] text-[12px] text-[#666666] bg-white border border-[#DDDDDD] h-7">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="text-[12px]">
+                  {profiles.map((profile) => (
+                    <SelectItem key={profile.value} value={profile.value} className="text-[12px] flex items-center">
+                      <span className="flex-1">{profile.label}</span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </div>
@@ -74,32 +76,28 @@ export default function Header({ anonymousLoggedIn, onAnonymousLogin, selectedPr
               href="https://consultant-plus-kursk.ru/"
               className="text-[14px] font-medium text-[#0066CC] hover:text-[#FFD700] transition-colors duration-200 no-underline"
               target="_blank"
-              rel="noopener noreferrer"
-            >
+              rel="noopener noreferrer">
               Новости
             </a>
-            <a 
-              href="https://consultant-plus-kursk.ru/o-kompanii" 
+            <a
+              href="https://consultant-plus-kursk.ru/o-kompanii"
               className="text-[14px] font-medium text-[#0066CC] hover:text-[#FFD700] transition-colors duration-200 no-underline"
               target="_blank"
-              rel="noopener noreferrer"
-            >
+              rel="noopener noreferrer">
               Продукты
             </a>
-            <a 
-              href="https://consultant-plus-kursk.ru/o-kompanii-2" 
+            <a
+              href="https://consultant-plus-kursk.ru/o-kompanii-2"
               className="text-[14px] font-medium text-[#0066CC] hover:text-[#FFD700] transition-colors duration-200 no-underline"
               target="_blank"
-              rel="noopener noreferrer"
-            >
+              rel="noopener noreferrer">
               О компании
             </a>
-            <a 
-              href="https://consultant-plus-kursk.ru/kontakty" 
+            <a
+              href="https://consultant-plus-kursk.ru/kontakty"
               className="text-[14px] font-medium text-[#0066CC] hover:text-[#FFD700] transition-colors duration-200 no-underline"
               target="_blank"
-              rel="noopener noreferrer"
-            >
+              rel="noopener noreferrer">
               Контакты
             </a>
           </nav>
