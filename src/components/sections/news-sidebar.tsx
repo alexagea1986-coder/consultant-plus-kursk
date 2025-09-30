@@ -66,12 +66,12 @@ export default function NewsSidebar({ anonymousLoggedIn, selectedProfile }: News
   }, [selectedProfile, profileNews])
 
   if (!anonymousLoggedIn) {
-    return <div className="bg-[#F5F5F5] rounded-md p-2 h-full"></div>
+    return <div className="bg-[#F5F5F5] rounded-md p-2 h-full border border-[#FFD700]"></div>
   }
 
   if (loading) {
     return (
-      <div className="bg-[#F5F5F5] rounded-md p-1 space-y-1 h-full flex flex-col">
+      <div className="bg-[#F5F5F5] rounded-md p-1 space-y-1 h-full flex flex-col border border-[#FFD700]">
         <div className="flex items-center justify-between mb-1">
           <div className="flex items-center">
             <div className="w-5 h-5 bg-gray-300 rounded mr-2 animate-pulse"></div>
@@ -97,14 +97,14 @@ export default function NewsSidebar({ anonymousLoggedIn, selectedProfile }: News
 
   if (error) {
     return (
-      <div className="bg-[#F5F5F5] rounded-md p-1 space-y-1 h-full flex flex-col justify-center">
+      <div className="bg-[#F5F5F5] rounded-md p-1 space-y-1 h-full flex flex-col justify-center border border-[#FFD700]">
         <div className="text-red-500 text-sm">{error}</div>
       </div>
     )
   }
 
   return (
-    <div className="bg-[#F5F5F5] rounded-md p-1 space-y-1 h-full flex flex-col">
+    <div className="bg-[#F5F5F5] rounded-md p-1 space-y-1 h-full flex flex-col border border-[#FFD700]">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center">
           <Calendar className="w-5 h-5 text-[#0066CC] mr-2" />
