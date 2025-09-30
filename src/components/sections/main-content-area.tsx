@@ -182,19 +182,19 @@ export default function MainContentArea({ anonymousLoggedIn, onAnonymousLogin, s
         
         {/* Input */}
         <div 
-          className="bg-[#FFD700] p-1 rounded" 
+          className="bg-[#FFD700] p-1 rounded w-full" 
           onClick={() => textareaRef.current?.focus()}
         >
-          <div className="flex border-2 border-[#B8860B] rounded-lg overflow-hidden bg-white focus-within:border-2 focus-within:border-[#B8860B] focus-within:outline-none focus-within:ring-0 focus-within:shadow-none">
+          <div className="flex w-full border-2 border-[#B8860B] rounded-lg overflow-hidden bg-white focus-within:border-2 focus-within:border-[#B8860B] focus-within:outline-none focus-within:ring-0 focus-within:shadow-none">
             <Textarea
               ref={textareaRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Введите ваш вопрос..."
               onKeyDown={handleKeyDown}
-              className="flex-1 text-[14px] border-0 rounded-none px-4 py-2 text-[#333333] placeholder:text-[#666666] focus:border-0 focus:ring-0 focus:outline-none focus:shadow-none focus-visible:ring-0 focus-visible:shadow-none resize-none min-h-[40px]"
+              className="flex-1 text-[14px] border-0 rounded-none px-4 py-2 text-[#333333] placeholder:text-[#666666] focus:border-0 focus:ring-0 focus:outline-none focus:shadow-none focus-visible:ring-0 focus-visible:shadow-none resize-none min-h-[40px] w-full"
               disabled={isLoading}
-              style={{ overflow: 'hidden' }}
+              style={{ overflow: 'hidden', width: '100%' }}
             />
             <Button 
               onClick={handleSend} 
