@@ -177,14 +177,6 @@ export default function MainContentArea({ anonymousLoggedIn, onAnonymousLogin, s
           </Button>
         </div>
       </div>
-
-      {/* Centered navigation text relative to chat panel */}
-      <div className="flex justify-center space-x-8 pt-4 border-t border-[#DDDDDD]">
-        <span className="text-[14px] text-[#0066CC] hover:underline cursor-pointer">Новости</span>
-        <span className="text-[14px] text-[#0066CC] hover:underline cursor-pointer">Продукты</span>
-        <span className="text-[14px] text-[#0066CC] hover:underline cursor-pointer">О компании</span>
-        <span className="text-[14px] text-[#0066CC] hover:underline cursor-pointer">Контакты</span>
-      </div>
     </div>
   );
 }

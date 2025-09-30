@@ -85,44 +85,37 @@ export default function Header({ anonymousLoggedIn, onAnonymousLogin, selectedPr
           </div>
         </div>
 
-        {/* Navigation and Contact */}
-        <div className="flex items-center space-x-4">
-          {/* Navigation */}
-          <nav className="hidden md:flex items-center space-x-8 ml-auto">
-            <a
-              href="https://consultant-plus-kursk.ru/"
-              className="text-[14px] font-medium text-[#0066CC] hover:text-[#FFD700] transition-colors duration-200 no-underline"
-              target="_blank"
-              rel="noopener noreferrer">
-              Новости
-            </a>
-            <a
-              href="https://consultant-plus-kursk.ru/o-kompanii"
-              className="text-[14px] font-medium text-[#0066CC] hover:text-[#FFD700] transition-colors duration-200 no-underline"
-              target="_blank"
-              rel="noopener noreferrer">
-              Продукты
-            </a>
-            <a
-              href="https://consultant-plus-kursk.ru/o-kompanii-2"
-              className="text-[14px] font-medium text-[#0066CC] hover:text-[#FFD700] transition-colors duration-200 no-underline"
-              target="_blank"
-              rel="noopener noreferrer">
-              О компании
-            </a>
-            <a
-              href="https://consultant-plus-kursk.ru/kontakty"
-              className="text-[14px] font-medium text-[#0066CC] hover:text-[#FFD700] transition-colors duration-200 no-underline"
-              target="_blank"
-              rel="noopener noreferrer">
-              Контакты
-            </a>
-          </nav>
+        {/* Navigation - centered */}
+        <nav className="hidden md:flex items-center space-x-8">
+          <a
+            href="/news"
+            className="text-[14px] font-medium text-[#0066CC] hover:text-[#FFD700] transition-colors duration-200 no-underline"
+          >
+            Новости
+          </a>
+          <a
+            href="/products"
+            className="text-[14px] font-medium text-[#0066CC] hover:text-[#FFD700] transition-colors duration-200 no-underline"
+          >
+            Продукты
+          </a>
+          <a
+            href="/about"
+            className="text-[14px] font-medium text-[#0066CC] hover:text-[#FFD700] transition-colors duration-200 no-underline"
+          >
+            О компании
+          </a>
+          <a
+            href="/contacts"
+            className="text-[14px] font-medium text-[#0066CC] hover:text-[#FFD700] transition-colors duration-200 no-underline"
+          >
+            Контакты
+          </a>
+        </nav>
 
-          {/* Contact Info */}
-          <div className="hidden md:flex items-center text-sm text-[#666666] ml-8">
-            <a href="tel:+74712526969" className="hover:text-[#0066CC]">тел. (4712) 52-69-69</a>
-          </div>
+        {/* Contact Info - right aligned */}
+        <div className="hidden md:flex items-center text-sm text-[#666666]">
+          <a href="tel:+74712526969" className="hover:text-[#0066CC]">тел. (4712) 52-69-69</a>
         </div>
       </div>
     </header>
