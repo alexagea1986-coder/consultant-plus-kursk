@@ -163,7 +163,9 @@ export default function MainContentArea({ anonymousLoggedIn, onAnonymousLogin, s
                   ) : (
                     <div 
                       dangerouslySetInnerHTML={{ 
-                        __html: msg.content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') 
+                        __html: msg.content
+                          .replace(/^## ?/gm, '')  // Remove ## headers to prevent them from showing
+                          .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') 
                       }}
                       className="whitespace-pre-wrap"
                     />
