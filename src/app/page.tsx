@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Header from "@/components/sections/header"
 import MainLayout from "@/components/sections/main-layout"
 import NewsSidebar from "@/components/sections/news-sidebar"
@@ -11,6 +11,10 @@ import Footer from "@/components/sections/footer"
 export default function Home() {
   const [anonymousLoggedIn, setAnonymousLoggedIn] = useState(true)
   const [selectedProfile, setSelectedProfile] = useState("universal")
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   const handleAnonymousLogin = () => {
     setAnonymousLoggedIn(true)
