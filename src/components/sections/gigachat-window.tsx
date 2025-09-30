@@ -59,16 +59,14 @@ export default function GigaChatWindow({ selectedProfile }: GigaChatWindowProps)
         ) : (
           messages.map((msg, index) => (
             <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[80%] p-3 rounded ${msg.role === 'user' ? 'bg-[#0066CC] text-white' : 'bg-[#F5F5F5] text-[#333333]'}`}>
+              <div className={`max-w-[80%] p-3 rounded ${msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground'}`}>
                 <p className="text-[14px]">{msg.content}</p>
               </div>
             </div>
           ))
         )}
         {isLoading && (
-          <div className="flex justify-start">
-            <div className="bg-[#F5F5F5] p-3 rounded text-[#333333]">Генерация ответа...</div>
-          </div>
+          <div className="bg-muted p-3 rounded text-foreground">Генерация ответа...</div>
         )}
       </div>
       <div className="flex space-x-2">
@@ -77,10 +75,10 @@ export default function GigaChatWindow({ selectedProfile }: GigaChatWindowProps)
           onChange={(e) => setInputValue(e.target.value)}
           onKeyPress={(e) => e.key === 'Enter' && handleSend()}
           placeholder="Введите ваш вопрос..."
-          className="flex-1 text-[14px]"
+          className="flex-1 text-[14px] bg-white text-foreground"
           disabled={isLoading}
         />
-        <Button onClick={handleSend} disabled={isLoading || !inputValue.trim()} className="bg-white text-[#0066CC] hover:bg-[#F5F5F5] border border-[#0066CC]">
+        <Button onClick={handleSend} disabled={isLoading || !inputValue.trim()} className="bg-primary text-primary-foreground hover:bg-primary/90 border border-primary">
           <Send className="w-4 h-4" />
         </Button>
       </div>
