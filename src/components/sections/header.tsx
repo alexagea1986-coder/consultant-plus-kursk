@@ -64,7 +64,7 @@ export default function Header({ anonymousLoggedIn, onAnonymousLogin, selectedPr
             className="mr-3" />
 
           <div>
-            <span className="text-xl font-bold text-[#0066CC] whitespace-pre-line block !whitespace-pre-line">НейроконсультантПлюс</span>
+            <span className="text-xl font-bold text-[#0066CC] whitespace-pre-line block !whitespace-pre-line !whitespace-pre-line">НейроКонсультантПлюс</span>
             <div className="flex items-center mt-1">
               <span className="text-[12px] font-bold text-[#0066CC] mr-2 !whitespace-pre-line">Профиль:</span>
               <Select value={selectedProfile} onValueChange={onProfileChange}>
