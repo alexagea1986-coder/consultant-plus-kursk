@@ -69,8 +69,7 @@ export default function Header({ anonymousLoggedIn, onAnonymousLogin, selectedPr
               <span className="text-[12px] font-bold text-[#0066CC] mr-2 !whitespace-pre-line">Профиль:</span>
               <Select value={selectedProfile} onValueChange={onProfileChange}>
                 <SelectTrigger 
-                  className={`text-[12px] text-[#666666] bg-white border border-[#DDDDDD] h-7 inline-flex items-center justify-between`}
-                  style={{ width: `${dynamicWidth}px` }}
+                  className="text-[12px] text-[#666666] bg-white h-7 inline-flex items-center justify-between px-2"
                 >
                   <SelectValue />
                 </SelectTrigger>
