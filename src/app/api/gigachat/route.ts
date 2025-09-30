@@ -1,7 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import Exa from "exa-js";
-import { GigaChat } from 'gigachat-node';
-import crypto from "crypto";
 import https from "node:https";
 
 const httpsAgent = new https.Agent({
@@ -16,51 +13,62 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid messages format" }, { status: 400 });
     }
 
-    // Get the latest user message for search detection
-    const latestUserMessage = messages[messages.length - 1].content;
-    const needsSearch = /today|current|recent|2025|update|news/i.test(latestUserMessage);
-    
-    let context = "";
-    if (needsSearch) {
-      const exa = new Exa(process.env.EXA_API_KEY!);
-      const searchResults = await exa.search(latestUserMessage, {
-        numResults: 5,
-        useAutoprompt: true,
-        type: "ai",
-      });
-      
-      context = searchResults.results.map((r: any) => 
-        `- ${r.title}: ${r.snippet} (Source: ${r.url})`
-      ).join("\n");
-      
-      // Append context to the last user message in the conversation
-      messages[messages.length - 1].content = `${latestUserMessage}\n\nКонтекст из веб-поиска:\n${context}`;
+    // Get token
+    const credentials = Buffer.from(
+      `${process.env.GIGACHAT_CLIENT_ID}:${process.env.GIGACHAT_CLIENT_SECRET}`
+    ).toString("base64");
+
+    const tokenResponse = await fetch("https://ngw.devices.sberbank.ru:9443/api/v2/oauth", {
+      method: "POST",
+      headers: {
+        "Authorization": `Basic ${credentials}`,
+        "Accept": "application/json",
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams({
+        grant_type: "client_credentials",
+        scope: "gigaChat-api"
+      }).toString(),
+      agent: httpsAgent,
+      dispatcher: httpsAgent  // For compatibility
+    });
+
+    if (!tokenResponse.ok) {
+      const errorText = await tokenResponse.text();
+      console.error("Token error:", tokenResponse.status, errorText);
+      throw new Error(`Token request failed: ${tokenResponse.status} - ${errorText}`);
     }
 
-    const client = new GigaChat({
-      clientSecretKey: process.env.GIGACHAT_CLIENT_SECRET!,
-      isIgnoreTSL: true,
-      isPersonal: true,
-      autoRefreshToken: true
+    const { access_token } = await tokenResponse.json();
+
+    // Chat completion
+    const completionResponse = await fetch("https://gigachat.devices.sber.ru/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${access_token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "GigaChat-2-Pro",
+        messages,
+        stream: false,
+      }),
+      agent: httpsAgent,
+      dispatcher: httpsAgent
     });
 
-    await client.createToken();
+    if (!completionResponse.ok) {
+      const errorText = await completionResponse.text();
+      console.error("Completion error:", completionResponse.status, errorText);
+      throw new Error(`Completion failed: ${completionResponse.status} - ${errorText}`);
+    }
 
-    // Proceed with GigaChat call using the library
-    const completion = await client.chat.completions.create({
-      model: "GigaChat-2-Pro",
-      messages,
-      stream: false,
-    });
-
+    const completion = await completionResponse.json();
     const content = completion.choices[0]?.message?.content || "No response from GigaChat";
 
-    // If search was used, ensure sources are mentioned
-    const finalContent = needsSearch ? `${content}\n\nИсточники:\n${context}` : content;
-
-    return NextResponse.json({ content: finalContent });
+    return NextResponse.json({ content });
   } catch (error) {
-    console.error("GigaChat/Exa error:", error);
-    return NextResponse.json({ content: "Извините, произошла ошибка. Попробуйте позже." }, { status: 500 });
+    console.error("GigaChat error:", error);
+    return NextResponse.json({ content: error.message }, { status: 500 });
   }
 }
