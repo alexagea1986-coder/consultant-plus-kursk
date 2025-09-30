@@ -1,42 +1,73 @@
 import { NextRequest, NextResponse } from "next/server";
 import Exa from "exa-js";
+import crypto from "crypto";
 
 export async function POST(request: NextRequest) {
   try {
-    const { message, profile } = await request.json();
+    const { messages, selectedProfile } = await request.json();
 
-    // Determine if web search is needed (e.g., keywords indicating timeliness)
-    const needsSearch = /today|current|recent|2025|update|news/i.test(message);
+    if (!messages || !Array.isArray(messages) || messages.length === 0) {
+      return NextResponse.json({ error: "Invalid messages format" }, { status: 400 });
+    }
+
+    // Get the latest user message for search detection
+    const latestUserMessage = messages[messages.length - 1].content;
+    const needsSearch = /today|current|recent|2025|update|news/i.test(latestUserMessage);
     
     let context = "";
-    let messageWithContext = message;
     if (needsSearch) {
       const exa = new Exa(process.env.EXA_API_KEY!);
-      const searchResults = await exa.search(message, {
+      const searchResults = await exa.search(latestUserMessage, {
         numResults: 5,
         useAutoprompt: true,
         type: "ai",
       });
       
-      // Extract relevant snippets
       context = searchResults.results.map((r: any) => 
         `- ${r.title}: ${r.snippet} (Source: ${r.url})`
       ).join("\n");
       
-      // Add to prompt
-      messageWithContext = `${message}\n\nContext from web search:\n${context}`;
+      // Append context to the last user message in the conversation
+      messages[messages.length - 1].content = `${latestUserMessage}\n\nКонтекст из веб-поиска:\n${context}`;
     }
 
-    // Proceed with GigaChat call
-    const gigachatResponse = await fetch("https://gigachat.api.sber.ru/api/v1/chat/completions", {
+    // Generate UUID for RqUID
+    const rqUID = crypto.randomUUID();
+
+    // Get access token from GigaChat OAuth
+    const tokenResponse = await fetch("https://ngw.devices.sberbank.ru:9443/api/v2/oauth", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${process.env.GIGACHAT_API_KEY}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Accept": "application/json",
+        "RqUID": rqUID,
+        "Authorization": `Basic ${process.env.GIGACHAT_API_KEY}`,
+      },
+      body: "scope=GIGACHAT_API_PERS",
+    });
+
+    if (!tokenResponse.ok) {
+      throw new Error(`Token request failed: ${tokenResponse.status}`);
+    }
+
+    const tokenData = await tokenResponse.json();
+    const accessToken = tokenData.access_token;
+
+    if (!accessToken) {
+      throw new Error("No access token received");
+    }
+
+    // Proceed with GigaChat call using the access token
+    const gigachatResponse = await fetch("https://gigachat.devices.sberbank.ru/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${accessToken}`,
         "Content-Type": "application/json",
+        "RqUID": rqUID,
       },
       body: JSON.stringify({
-        model: profile || "GigaChat",
-        messages: [{ role: "user", content: messageWithContext }],
+        model: "GigaChat", // Default model; can adapt based on selectedProfile if needed
+        messages,
         stream: false,
       }),
     });
@@ -46,14 +77,14 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await gigachatResponse.json();
-    const response = data.choices[0]?.message?.content || "No response from GigaChat";
+    const content = data.choices[0]?.message?.content || "No response from GigaChat";
 
-    // If search was used, append sources to response
-    const finalResponse = needsSearch ? `${response}\n\nИсточники:\n${context}` : response;
+    // If search was used, ensure sources are mentioned
+    const finalContent = needsSearch ? `${content}\n\nИсточники:\n${context}` : content;
 
-    return NextResponse.json({ response: finalResponse });
+    return NextResponse.json({ content: finalContent });
   } catch (error) {
     console.error("GigaChat/Exa error:", error);
-    return NextResponse.json({ error: "Failed to process request" }, { status: 500 });
+    return NextResponse.json({ content: "Извините, произошла ошибка. Попробуйте позже." }, { status: 500 });
   }
 }
