@@ -21,7 +21,7 @@ export default function SearchChatInterface({ selectedProfile }: SearchChatInter
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={`Задайте вопрос по ${selectedProfile.toLowerCase()}...`}
-            className="pl-10 pr-4 bg-white border-none rounded text-[#333333] placeholder-[#666666] focus:ring-2 focus:ring-[#0066CC] focus:border-transparent"
+            className="pl-10 pr-4 bg-white border-2 border-[#FFD700] rounded text-[#333333] placeholder-[#666666] focus:ring-2 focus:ring-[#0066CC] focus:border-transparent"
           />
         </div>
         <Button 
