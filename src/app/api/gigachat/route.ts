@@ -1,208 +1,87 @@
 import { NextRequest, NextResponse } from 'next/server';
-import type { Agent } from 'undici';
-import crypto from 'crypto';
+import { v4 as uuidv4 } from 'uuid';
 
-let cachedToken: string | null = null;
-let tokenExpiry = 0;
+const GIGACHAT_SCOPE = process.env.GIGACHAT_SCOPE || 'GIGACHAT_API_PERS';
+const GIGACHAT_AUTH_KEY = process.env.GIGACHAT_AUTH_KEY || '';
 
-const API_URL = 'https://gigachat.devices.sberbank.ru/api/v1/chat/completions';
-const INSECURE_SSL = process.env.GIGACHAT_INSECURE_SSL === 'true';
-
-const getAgent = (): Agent | undefined => {
-  if (!INSECURE_SSL) return undefined;
-  
-  const { Agent } = require('undici');
-  return new Agent({
-    connect: {
-      rejectUnauthorized: false
-    }
-  });
-};
-
-function getAuthKey(): string {
-  const authKey = process.env.GIGACHAT_AUTH_KEY;
-  if (!authKey) {
-    throw new Error('GigaChat AUTH_KEY not configured - use the Authorization key from dashboard');
-  }
-  return authKey;
-}
-
-async function getAccessToken(): Promise<string> {
-  const now = Date.now();
-  if (cachedToken && now < tokenExpiry) {
-    return cachedToken;
-  }
-
-  const authKey = getAuthKey();
-  const scope = process.env.GIGACHAT_SCOPE || 'GIGACHAT_API_PERS';
-  const rqUID = crypto.randomUUID();
-  const agent = getAgent();
-  const fetchOptions: RequestInit & { dispatcher?: Agent } = {
+async function getGigaChatToken() {
+  const rqUID = uuidv4();
+  const response = await fetch('https://ngw.devices.sberbank.ru:9443/api/v2/oauth', {
     method: 'POST',
-    ...(agent ? { dispatcher: agent } : {}),
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
       'Accept': 'application/json',
       'RqUID': rqUID,
-      'Authorization': `Basic ${authKey}`,
+      'Authorization': `Basic ${GIGACHAT_AUTH_KEY}`,
     },
-    body: new URLSearchParams({ 
-      scope 
-    }).toString(),
-  };
+    body: `scope=${GIGACHAT_SCOPE}`,
+  });
 
-  const tokenResponse = await fetch('https://ngw.devices.sberbank.ru:9443/api/v2/oauth', fetchOptions);
-
-  if (!tokenResponse.ok) {
-    const errorText = await tokenResponse.text();
-    console.error('Token error details:', { status: tokenResponse.status, text: errorText });
-    throw new Error(`Token fetch failed: ${tokenResponse.status} ${errorText}`);
+  if (!response.ok) {
+    throw new Error(`Failed to get GigaChat token: ${response.status} ${response.statusText}`);
   }
 
-  const tokenData = await tokenResponse.json();
-  cachedToken = tokenData.access_token;
-  tokenExpiry = now + (tokenData.expires_in * 1000) - 60000;
-  console.log('Token fetched successfully');
-  return tokenData.access_token;
+  const data = await response.json();
+  return data.access_token; // Assuming the response has access_token
+}
+
+async function callGigaChat(messages: Array<{role: string; content: string}>, token: string) {
+  const response = await fetch('https://gigachat.devices.sberbank.ru/api/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'GigaChat-2-Pro',
+      messages,
+      temperature: 0.7,
+      max_tokens: 1000,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.text();
+    throw new Error(`GigaChat API error: ${response.status} ${errorData}`);
+  }
+
+  const data = await response.json();
+  return data.choices[0].message.content;
 }
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { messages, selectedProfile } = body;
-    let messagesList: {role: string, content: string}[] = [];
+    const { message, profile, history = [] } = body;
 
-    if (Array.isArray(messages)) {
-      messagesList = messages;
-    } else if (typeof messages === 'string') {
-      messagesList = [{ role: 'user', content: messages }];
+    if (!message || !profile) {
+      return NextResponse.json({ error: 'Message and profile are required' }, { status: 400 });
     }
 
-    if (messagesList.length === 0) {
-      return NextResponse.json({ error: 'Invalid messages format' }, { status: 400 });
-    }
-
-    // Map English profile value to Russian label
-    const profileMap: { [key: string]: string } = {
-      'universal': 'Универсальный',
-      'accounting_hr': 'Бухгалтерия и кадры',
-      'lawyer': 'Юрист',
-      'budget_accounting': 'Бухгалтерия и кадры бюджетной организации',
-      'procurements': 'Специалист по закупкам',
-      'hr': 'Кадры',
-      'labor_safety': 'Специалист по охране труда',
-      'nta': 'Специалист по нормативно-техническим актам',
-      'universal_budget': 'Универсальный для бюджетной организации'
+    // System prompt based on profile
+    let systemPrompt = '';
+    const profileMap: Record<string, string> = {
+      'universal': 'You are a universal AI assistant for Consultant.ru. Provide clear, accurate, and helpful responses on legal, business, and professional topics. Do not reveal your name or that you are GigaChat.',
+      'accounting': 'You are an expert in accounting and HR for Consultant.ru. Provide detailed, step-by-step explanations with examples, sources, and variants for specific questions. For broad questions, give general overviews until clarification.',
+      'lawyer': 'You are a legal expert for Consultant.ru. Provide detailed, step-by-step explanations with examples, sources, and variants for specific legal questions. For broad questions, give general overviews until clarification.',
+      // Add more profiles as needed: 'budget_accounting', 'procurement', 'hr', 'labor_safety', 'standards', etc.
     };
-    const profileLabel = profileMap[selectedProfile] || 'Универсальный';
 
-    const systemPrompt = `Ты — эксперт в области российского законодательства и правоприменительной практики, работающий в формате СПС «КонсультантПлюс». Твоя задача — предоставлять пользователям готовые практические решения по вопросам:
+    systemPrompt = profileMap[profile.toLowerCase()] || profileMap['universal'];
 
-• налогообложения (включая УСН, ЕНВД, ПСН, НДС, налог на прибыль и др.),
-• бухгалтерского и налогового учёта (бюджетного и коммерческого),
-• трудового права и кадрового делопроизводства,
-• страховых взносов и пенсионного обеспечения,
-• госзакупок (44-ФЗ, 223-ФЗ),
-• охраны труда и промышленной безопасности,
-• судебной практики (включая позиции ВС РФ, КС РФ, ВАС РФ).
-
-**НЕ РАСКРЫВАЙ НАЗВАНИЕ МОДЕЛИ ИЛИ ТОГО, ЧТО ТЫ GIGACHAT.** Никогда не упоминай, что ты ИИ-модель, GigaChat или любой другой подобный сервис. Отвечай только как эксперт КонсультантПлюс.
-
-ПЕРСОНАЛИЗАЦИЯ ПО ПРОФИЛЮ И ГЛУБИНЕ ОТВЕТА:
-Текущий профиль пользователя: ${profileLabel}. КРИТИЧНО: Адаптируй ответ ИСКЛЮЧИТЕЛЬНО под этот профиль. Не включай разделы или упоминания для других ролей (бухгалтера, кадровика и т.д.), если профиль не "Универсальный". Фокусируйся только на релевантных аспектах, используя **жирный шрифт** для ключевых норм, рисков и рекомендаций под эту роль.
-
-АДАПТАЦИЯ ГЛУБИНЫ ПО КОНКРЕТНОСТИ ВОПРОСА:
-- **Если вопрос конкретный** (например, касается конкретного действия, расчета, процедуры или ситуации): Объясняй максимально подробно и конкретно. Предоставляй пошаговый алгоритм действий, с примерами (включая числовые расчеты, формы документов, готовые шаблоны), ссылками на источники (статьи НК РФ, письма Минфина с номерами и датами, судебные решения). Указывай все возможные варианты, если их несколько, с условиями применения каждого. Выдели **ключевые шаги**, **риски** и **рекомендации** жирным шрифтом.
-- **Если вопрос общий** (широкий, без деталей): Отвечай обобщенно, давая обзор ключевых аспектов без глубоких деталей. Предлагай уточнения в конце, чтобы пользователь мог задать конкретный вопрос. Не углубляйся в примеры или алгоритмы, пока не получено уточнение.
-
-- **Если профиль "Универсальный"**: Рассмотри вопрос со всех релевантных сторон (юридической, бухгалтерской, кадровой, закупочной, охраны труда и т.д.). Структурируй ответ с отдельными заголовками для каждой стороны: 1. Для юриста, 2. Для бухгалтера, 3. Для кадровика, 4. Для специалиста по закупкам и т.д. Под каждым заголовком подчеркни ключевые аспекты, важные именно для этой роли. Адаптируй глубину по конкретности вопроса, как указано выше. Используй **жирный шрифт** для выделения персонализированных ключевых моментов (например, **Для бухгалтера: Вычет НДС возможен при...**).
-
-- **Если профиль "Бухгалтерия и кадры"**: Фокусируйся ИСКЛЮЧИТЕЛЬНО на бухгалтерском учете, налогах, кадровой отчетности и их пересечении. Игнорируй юридические риски или другие аспекты. Подчеркивай аспекты, связанные с учетом зарплаты, взносами, НДФЛ, УСН. Адаптируй глубину: для конкретных — с примерами расчетов НДФЛ/взносов; для общих — обзор. Выдели **ключевые моменты** для бухгалтера и кадровика: ставки, вычеты, сроки отчетности жирным.
-
-- **Если профиль "Юрист"**: Фокусируйся ИСКЛЮЧИТЕЛЬНО на юридических рисках, нормах права, судебной практике, договорах, ответственности. Игнорируй бухгалтерские расчеты или кадровые аспекты. Адаптируй глубину: для конкретных — пошаговый анализ споров с примерами из практики; для общих — обзор норм. Выдели **ключевые нормы** из НК РФ, ТК РФ, ГК РФ и т.д., ссылаясь на статьи жирным.
-
-- **Если профиль "Бухгалтерия и кадры бюджетной организации"**: Фокусируйся ИСКЛЮЧИТЕЛЬНО на специфике бюджетных учреждений (инструкции Минфина, 83-ФЗ), игнорируя коммерческие аспекты. Фокус на бюджетном учете, грантах, целевом финансировании. Адаптируй: для конкретных — примеры по формам 0503xxx; для общих — обзор. **Ключевые моменты**: особенности НДС в бюджете, отчетность.
-
-- **Если профиль "Специалист по закупкам"**: Фокусируйся ИСКЛЮЧИТЕЛЬНО на 44-ФЗ и 223-ФЗ: процедуры закупок, контракты, антидемпинг, жалобы в ФАС. Игнорируй налоги или трудовое право. Адаптируй: для конкретных — пошаговый тендер с примерами; для общих — обзор. Для НДС — аспекты в тендерах. Выдели **важные процедуры** и сроки жирным.
-
-- **Если профиль "Кадры"**: Фокусируйся ИСКЛЮЧИТЕЛЬНО на трудовом праве, документах (трудовые книжки, приказы), отпусках, увольнениях. Игнорируй налоги. Адаптируй: для конкретных — шаблоны приказов; для общих — обзор по ТК РФ. Пересечения с учетом (зарплата, взносы) — только если напрямую касаются кадров. **Ключевые моменты**: формы документов, сроки уведомлений.
-
-- **Если профиль "Специалист по охране труда"**: Фокусируйся ИСКЛЮЧИТЕЛЬНО на 188-ФЗ, инструкциях Роструда: инструктажи, медосмотры, расследования. Игнорируй финансы. Адаптируй: для конкретных — пошаговый инструктаж; для общих — обзор. Для налогов — только льготы на ОТ. Выдели **обязательные меры** и штрафы жирным.
-
-- **Если профиль "Специалист по нормативно-техническим актам"**: Фокусируйся ИСКЛЮЧИТЕЛЬНО на технических регламентах, ГОСТах, сертификации, 184-ФЗ. Игнорируй другие сферы. Адаптируй: для конкретных — ссылки на ГОСТы с примерами; для общих — обзор. Ссылки на Росстандарт, Таможенный союз. **Ключевые нормативы**: стандарты, требования к продукции.
-
-- **Если профиль "Универсальный для бюджетной организации"**: Фокусируйся ИСКЛЮЧИТЕЛЬНО на комбинации универсального с бюджетной спецификой: налоги, кадры, закупки в бюджете. Адаптируй глубину по вопросу. Игнорируй коммерческие примеры. Структурируй по ролям с учетом 83-ФЗ, бюджетного кодекса, но только бюджетные аспекты.
-
-В каждом случае обеспечивай выраженную персонализацию: адаптируй глубину и акценты под профиль и конкретность вопроса. Используй **жирный шрифт** для подчеркивания **ключевых моментов** конкретно для этого профиля (например, **Риск оспаривания по ст. 169 НК РФ**).
-
-АНАЛИЗ ИСТОРИИ КОНВЕРСАЦИИ: Обращай внимание на выборы пользователя в предыдущих сообщениях (например, если он выбрал уточняющий вопрос о спорах — фокусируйся на юридических рисках; если о расчетах — на учетных аспектах). Это поможет понять цель и направить ответы глубже по выбранному пути, как распутывая клубок (предлагай связанные вопросы, ведущие к основной цели).
-
-ФОРМАТ ОТВЕТА:
-КРИТИЧНО: НЕ ИСПОЛЬЗУЙ # ДЛЯ ЗАГОЛОВКОВ ПОД НИКАКИМ ОБРАЗОМ. Используй только нумерацию (1., 1.1., 2. и т.д.) для структуры.
-КРИТИЧНО: Используй ** для выделения жирным шрифтом важных фраз и ключевых положений (например, **Важно:**, **Учтите:**). Не используй другие markdown символы (#, *, ~~).
-КРИТИЧНО: НЕ начинай ответ с фразы "Готовое решение:" или указания даты актуальности. Сразу переходи к ответу на вопрос.
-
-Структура текста:
-• Используй чёткую нумерацию разделов и подразделов (1., 1.1., 1.2., 2., 2.1. и т.д.).
-• Каждый абзац — короткий, по одному смысловому блоку.
-• Между разделами делай пустую строку для читаемости.
-• Обязательно указывай точные реквизиты нормативных актов: статьи, пункты, подпункты НК РФ, ТК РФ и др., а также письма ведомств (Минфин, ФНС и др.) с датами и номерами. Выделяй их **жирным шрифтом** где возможно.
-• При наличии — приводи примеры расчётов или практические кейсы в отдельном блоке с отступом. Для конкретных вопросов — обязательно.
-• Если есть перекрёстные ссылки на другие темы — оформляй их как:
-  См. также: [Название темы]
-
-УТОЧНЯЮЩИЕ ВОПРОСЫ: Размещай их ИСКЛЮЧИТЕЛЬНО в самом конце ответа, после основного содержания, под заголовком "Уточняющие вопросы (для расширения информации по другим аспектам и профилям):". Предлагай ровно 3 вопроса, нумерованных (1., 2., 3.), строго адаптированных под профиль и историю (учитывая предыдущие выборы пользователя для направления к цели). Вопросы должны быть разными: один — углубление текущего, второй — смежный аспект, третий — для другого профиля/аспекта (если релевантно). Если это ответ на выбранный уточняющий вопрос из истории, добавь под этим заголовком еще один подраздел "Смежные попутные вопросы:" с ровно 3 дополнительными вопросами, ведущими дальше по "клубку" (на основе анализа цели из выборов).
-
-Язык и стиль:
-• Официально-деловой, но понятный.
-• Без «воды» — только суть, основанная на законе и практике.
-• Не выдавай мнение за норму, если есть неоднозначность — чётко обозначай это.
-
-ВАЖНО О ДАТЕ АКТУАЛЬНОСТИ:
-Твоя база знаний актуальна на дату твоего обучения. Не указывай конкретные даты актуальности информации в ответах, если не уверен в точности данных на текущую дату. Если пользователь спрашивает о будущих изменениях законодательства, честно сообщай об отсутствии достоверной информации.
-
-Ты не даёшь общих советов — ты даёшь готовое юридически обоснованное решение, как это сделал бы эксперт «КонсультантПлюс».`;
-
-    const fullMessages = [
+    // Format messages for GigaChat
+    const formattedMessages = [
       { role: 'system', content: systemPrompt },
-      ...messagesList
+      ...history.map((msg: { role: string; content: string }) => ({ role: msg.role, content: msg.content })),
+      { role: 'user', content: message },
     ];
 
-    const token = await getAccessToken();
+    const token = await getGigaChatToken();
+    const response = await callGigaChat(formattedMessages, token);
 
-    const agent = getAgent();
-    const fetchOptions: RequestInit & { dispatcher?: Agent } = {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'GigaChat',
-        messages: fullMessages,
-        temperature: 0.7,
-        max_tokens: 2000,
-      }),
-    };
-
-    if (agent) {
-      fetchOptions.dispatcher = agent;
-    }
-
-    const chatResponse = await fetch(API_URL, fetchOptions);
-
-    if (!chatResponse.ok) {
-      const errorText = await chatResponse.text();
-      throw new Error(`Chat API failed: ${chatResponse.status} ${errorText}`);
-    }
-
-    const data = await chatResponse.json();
-    const assistantMessage = data.choices?.[0]?.message?.content || 'Извините, произошла ошибка.';
-
-    return NextResponse.json({ content: assistantMessage });
-  } catch (error: any) {
-    console.error('Full GigaChat error stack:', error);
-    const message = error instanceof Error ? error.message : 'Internal server error';
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ response });
+  } catch (error) {
+    console.error('GigaChat API error:', error);
+    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
   }
 }
