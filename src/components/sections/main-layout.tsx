@@ -84,6 +84,21 @@ export default function MainLayout({ newsSidebar, aiSearch, additionalServices }
     setIsDragging(false);
     document.body.style.userSelect = '';
     document.body.style.cursor = '';
+    // Save to localStorage on drag end
+    localStorage.setItem('layoutWidths', JSON.stringify({ leftPercent, middlePercent, rightPercent }));
+  }, [leftPercent, middlePercent, rightPercent]);
+
+  // Load from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('layoutWidths');
+    if (saved) {
+      const { leftPercent: savedLeft, middlePercent: savedMiddle, rightPercent: savedRight } = JSON.parse(saved);
+      if (savedLeft && savedMiddle && savedRight && (savedLeft + savedMiddle + savedRight) === 100) {
+        setLeftPercent(savedLeft);
+        setMiddlePercent(savedMiddle);
+        setRightPercent(savedRight);
+      }
+    }
   }, []);
 
   useEffect(() => {
