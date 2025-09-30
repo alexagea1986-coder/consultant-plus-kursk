@@ -15,6 +15,10 @@ export default function MainLayout({ newsSidebar, aiSearch, additionalServices }
   const middleRef = useRef<HTMLDivElement>(null);
   const rightRef = useRef<HTMLDivElement>(null);
 
+  const leftPercentRef = useRef(33.33);
+  const middlePercentRef = useRef(50);
+  const rightPercentRef = useRef(16.67);
+
   const [isLg, setIsLg] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [whichHandle, setWhichHandle] = useState(0);
@@ -26,6 +30,33 @@ export default function MainLayout({ newsSidebar, aiSearch, additionalServices }
   const [leftPercent, setLeftPercent] = useState(33.33);
   const [middlePercent, setMiddlePercent] = useState(50);
   const [rightPercent, setRightPercent] = useState(16.67);
+
+  // Load from localStorage on mount with validation
+  useEffect(() => {
+    const saved = localStorage.getItem('layoutWidths');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        const { leftPercent: l, middlePercent: m, rightPercent: r } = parsed;
+        const sum = l + m + r;
+        if (
+          typeof l === 'number' && typeof m === 'number' && typeof r === 'number' &&
+          l >= 15 && m >= 30 && r >= 10 &&
+          Math.abs(sum - 100) < 0.5
+        ) {
+          setLeftPercent(l);
+          setMiddlePercent(m);
+          setRightPercent(r);
+          leftPercentRef.current = l;
+          middlePercentRef.current = m;
+          rightPercentRef.current = r;
+          return;
+        }
+      } catch (e) {
+        // Ignore invalid data
+      }
+    }
+  }, []);
 
   useEffect(() => {
     const media = window.matchMedia('(min-width: 1024px)');
@@ -65,7 +96,10 @@ export default function MainLayout({ newsSidebar, aiSearch, additionalServices }
         newMiddle = 30;
       }
       setLeftPercent(newLeft);
+      leftPercentRef.current = newLeft;
       setMiddlePercent(newMiddle);
+      middlePercentRef.current = newMiddle;
+      rightPercentRef.current = rightPercent;
     } else if (whichHandle === 2) {
       let newMiddle = startMiddlePercent + deltaPercent;
       const oldSumMR = startMiddlePercent + startRightPercent;
@@ -76,29 +110,23 @@ export default function MainLayout({ newsSidebar, aiSearch, additionalServices }
         newMiddle = oldSumMR - 10;
       }
       setMiddlePercent(newMiddle);
+      middlePercentRef.current = newMiddle;
       setRightPercent(oldSumMR - newMiddle);
+      rightPercentRef.current = oldSumMR - newMiddle;
+      leftPercentRef.current = leftPercent;
     }
-  }, [isDragging, whichHandle, startRelativeX, startLeftPercent, startMiddlePercent, startRightPercent]);
+  }, [isDragging, whichHandle, startRelativeX, startLeftPercent, startMiddlePercent, startRightPercent, leftPercent, rightPercent]);
 
   const handleMouseUp = useCallback(() => {
     setIsDragging(false);
     document.body.style.userSelect = '';
     document.body.style.cursor = '';
-    // Save to localStorage on drag end
-    localStorage.setItem('layoutWidths', JSON.stringify({ leftPercent, middlePercent, rightPercent }));
-  }, [leftPercent, middlePercent, rightPercent]);
-
-  // Load from localStorage on mount
-  useEffect(() => {
-    const saved = localStorage.getItem('layoutWidths');
-    if (saved) {
-      const { leftPercent: savedLeft, middlePercent: savedMiddle, rightPercent: savedRight } = JSON.parse(saved);
-      if (savedLeft && savedMiddle && savedRight && (savedLeft + savedMiddle + savedRight) === 100) {
-        setLeftPercent(savedLeft);
-        setMiddlePercent(savedMiddle);
-        setRightPercent(savedRight);
-      }
-    }
+    // Save to localStorage on drag end using refs
+    localStorage.setItem('layoutWidths', JSON.stringify({ 
+      leftPercent: leftPercentRef.current, 
+      middlePercent: middlePercentRef.current, 
+      rightPercent: rightPercentRef.current 
+    }));
   }, []);
 
   useEffect(() => {
