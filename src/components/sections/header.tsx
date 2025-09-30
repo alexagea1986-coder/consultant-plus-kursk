@@ -11,9 +11,23 @@ import {
 interface HeaderProps {
   anonymousLoggedIn: boolean;
   onAnonymousLogin: () => void;
+  selectedProfile: string;
+  onProfileChange: (profile: string) => void;
 }
 
-export default function Header({ anonymousLoggedIn, onAnonymousLogin }: HeaderProps) {
+export default function Header({ anonymousLoggedIn, onAnonymousLogin, selectedProfile, onProfileChange }: HeaderProps) {
+  const profiles = [
+    { value: 'universal', label: 'Универсальный' },
+    { value: 'accounting_hr', label: 'Бухгалтерия и кадры' },
+    { value: 'lawyer', label: 'Юрист' },
+    { value: 'budget_accounting', label: 'Бухгалтерия и кадры бюджетной организации' },
+    { value: 'procurements', label: 'Специалист по закупкам' },
+    { value: 'hr', label: 'Кадры' },
+    { value: 'labor_safety', label: 'Специалист по охране труда' },
+    { value: 'nta', label: 'Специалист по нормативно-техническим актам' },
+    { value: 'universal_budget', label: 'Универсальный для бюджетной организации' }
+  ];
+
   const navItems = [
     { label: "Новости", href: "/news" },
     { label: "Продукты", href: "/products" },
@@ -33,7 +47,23 @@ export default function Header({ anonymousLoggedIn, onAnonymousLogin }: HeaderPr
             height={40}
             className="mr-3" />
 
-          <span className="text-xl font-bold text-[#333333] whitespace-pre-line">Инфо-Комплекс Плюс</span>
+          <div>
+            <span className="text-xl font-bold text-[#333333] whitespace-pre-line block">Инфо-Комплекс Плюс</span>
+            <div className="flex items-center mt-1">
+              <span className="text-[12px] font-bold text-[#333333] mr-2">Профиль</span>
+              <select 
+                value={selectedProfile} 
+                onChange={(e) => onProfileChange(e.target.value)}
+                className="text-[12px] text-[#666666] border border-[#DDDDDD] rounded px-2 py-1 bg-white"
+              >
+                {profiles.map((profile) => (
+                  <option key={profile.value} value={profile.value}>
+                    {profile.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
         </div>
 
         {/* Navigation and Contact */}

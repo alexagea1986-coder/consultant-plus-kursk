@@ -12,28 +12,14 @@ interface NewsItem {
 
 interface NewsSidebarProps {
   anonymousLoggedIn: boolean
-  selectedProfile?: string
-  onProfileChange?: (profile: string) => void
+  selectedProfile: string
 }
 
-export default function NewsSidebar({ anonymousLoggedIn, selectedProfile: propSelectedProfile, onProfileChange }: NewsSidebarProps) {
+export default function NewsSidebar({ anonymousLoggedIn, selectedProfile }: NewsSidebarProps) {
   const [profileNews, setProfileNews] = useState<Record<string, NewsItem[]>>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [selectedProfile, setSelectedProfile] = useState(propSelectedProfile || 'universal')
   const [filteredNews, setFilteredNews] = useState<NewsItem[]>([])
-
-  const profiles = [
-    { value: 'universal', label: 'Универсальный' },
-    { value: 'accounting_hr', label: 'Бухгалтерия и кадры' },
-    { value: 'lawyer', label: 'Юрист' },
-    { value: 'budget_accounting', label: 'Бухгалтерия и кадры бюджетной организации' },
-    { value: 'procurements', label: 'Специалист по закупкам' },
-    { value: 'hr', label: 'Кадры' },
-    { value: 'labor_safety', label: 'Специалист по охране труда' },
-    { value: 'nta', label: 'Специалист по нормативно-техническим актам' },
-    { value: 'universal_budget', label: 'Универсальный для бюджетной организации' }
-  ]
 
   const profileKeywords = {
     universal: [], // show all
@@ -46,10 +32,6 @@ export default function NewsSidebar({ anonymousLoggedIn, selectedProfile: propSe
     nta: ['нормативно-технические акты', 'стандарты', 'ГОСТ', 'технические регламенты'],
     universal_budget: ['бюджет', 'государственная организация', 'финансы']
   }
-
-  useEffect(() => {
-    if (propSelectedProfile) setSelectedProfile(propSelectedProfile)
-  }, [propSelectedProfile])
 
   useEffect(() => {
     if (!anonymousLoggedIn) return
@@ -77,10 +59,6 @@ export default function NewsSidebar({ anonymousLoggedIn, selectedProfile: propSe
 
     fetchNews()
   }, [anonymousLoggedIn])
-
-  useEffect(() => {
-    onProfileChange && onProfileChange(selectedProfile)
-  }, [selectedProfile, onProfileChange])
 
   useEffect(() => {
     const newsForProfile = profileNews[selectedProfile] || []
@@ -127,22 +105,6 @@ export default function NewsSidebar({ anonymousLoggedIn, selectedProfile: propSe
 
   return (
     <div className="bg-[#F5F5F5] rounded-md p-1 space-y-1 h-full flex flex-col">
-      <div className="bg-white rounded border border-[#DDDDDD] p-2 mb-2">
-        <div className="flex items-center">
-          <span className="text-[14px] font-bold text-[#333333] mr-2">Профиль</span>
-          <select 
-            value={selectedProfile} 
-            onChange={(e) => setSelectedProfile(e.target.value)}
-            className="text-[12px] text-[#666666] border border-[#DDDDDD] rounded px-2 py-1 bg-white"
-          >
-            {profiles.map((profile) => (
-              <option key={profile.value} value={profile.value}>
-                {profile.label}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center">
           <Calendar className="w-5 h-5 text-[#0066CC] mr-2" />
