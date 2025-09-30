@@ -48,13 +48,13 @@ export default function Header({ anonymousLoggedIn, onAnonymousLogin, selectedPr
             className="mr-3" />
 
           <div>
-            <span className="text-xl font-bold text-[#333333] whitespace-pre-line block">Инфо-Комплекс Плюс</span>
+            <span className="text-xl font-bold text-[#0066CC] whitespace-pre-line block">Инфо-Комплекс Плюс</span>
             <div className="flex items-center mt-1">
-              <span className="text-[12px] font-bold text-[#333333] mr-2">Профиль</span>
+              <span className="text-[12px] font-bold text-[#0066CC] mr-2">Профиль</span>
               <select 
                 value={selectedProfile} 
                 onChange={(e) => onProfileChange(e.target.value)}
-                className="text-[12px] text-[#666666] border border-[#DDDDDD] rounded px-2 py-1 bg-white"
+                className="text-[12px] text-[#666666] bg-white"
               >
                 {profiles.map((profile) => (
                   <option key={profile.value} value={profile.value}>
