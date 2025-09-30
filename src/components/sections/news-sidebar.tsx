@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Calendar } from "lucide-react"
 
 interface NewsItem {
   title: string
@@ -106,10 +105,7 @@ export default function NewsSidebar({ anonymousLoggedIn, selectedProfile }: News
   return (
     <div className="bg-[#F5F5F5] rounded-md p-1 space-y-1 h-full flex flex-col border border-[#FFD700]">
       <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center">
-          <Calendar className="w-5 h-5 text-[#0066CC] mr-2" />
-          <h2 className="text-[18px] font-semibold text-[#333333]">Новости</h2>
-        </div>
+        <h2 className="text-[18px] font-semibold text-[#333333]">Новости</h2>
       </div>
 
       <div className="space-y-1 flex-1">
@@ -121,8 +117,7 @@ export default function NewsSidebar({ anonymousLoggedIn, selectedProfile }: News
             target="_blank"
             rel="noopener noreferrer"
           >
-            <div className="flex items-center mb-2">
-              <Calendar className="w-4 h-4 text-[#666666] mr-2 flex-shrink-0" />
+            <div className="mb-2">
               <span className="text-xs text-[#666666] leading-tight">{item.date}</span>
             </div>
             <h3 className="text-sm font-normal text-[#0066CC] leading-relaxed line-clamp-2 mb-2 hover:underline">{item.title}</h3>
