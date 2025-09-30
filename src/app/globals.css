@@ -1,3 +1,4 @@
+/* Updated: 2025-09-30T13:15:52.138Z */
 /* Updated: 2025-09-30T11:07:15.500Z */
 /* Updated: 2025-09-30T10:02:47.417Z */
 /* Updated: 2025-09-30T09:51:07.570Z */
@@ -82,7 +83,7 @@
 
 :root {
   --radius: 0.5rem;
-  --background: #FFFFFF;
+  --background: #F8F9FA;
   --foreground: #333333;
   --card: #FFFFFF;
   --card-foreground: #333333;
@@ -126,7 +127,7 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-white text-[#333333];
+    @apply bg-background text-[#333333];
     font-family: Arial, Helvetica, sans-serif;
     font-size: 14px;
     line-height: 1.5;

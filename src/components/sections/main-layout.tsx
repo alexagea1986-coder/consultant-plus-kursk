@@ -162,7 +162,7 @@ export default function MainLayout({ newsSidebar, aiSearch, additionalServices }
   }, [isDragging]);
 
   return (
-    <div className="bg-white flex-1">
+    <div className="bg-background flex-1">
       <div className="w-full max-w-[1200px] mx-auto px-1 sm:px-2 lg:px-3 flex flex-col lg:flex-row h-full">
         <div ref={containerRef} className="flex flex-col lg:flex-row gap-1 flex-1 h-full">
           <div 

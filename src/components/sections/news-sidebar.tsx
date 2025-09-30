@@ -65,12 +65,12 @@ export default function NewsSidebar({ anonymousLoggedIn, selectedProfile }: News
   }, [selectedProfile, profileNews])
 
   if (!anonymousLoggedIn) {
-    return <div className="bg-[#F5F5F5] rounded-md p-2 h-full border border-[#FFD700]"></div>
+    return <div className="bg-white rounded-md p-2 h-full border border-[#E5E7EB]"></div>
   }
 
   if (loading) {
     return (
-      <div className="bg-[#F5F5F5] rounded-md p-1 space-y-1 h-full flex flex-col border border-[#FFD700]">
+      <div className="bg-white rounded-md p-1 space-y-1 h-full flex flex-col border border-[#E5E7EB]">
         <div className="flex items-center justify-between mb-1">
           <div className="flex items-center">
             <div className="w-5 h-5 bg-gray-300 rounded mr-2 animate-pulse"></div>
@@ -80,7 +80,7 @@ export default function NewsSidebar({ anonymousLoggedIn, selectedProfile }: News
         </div>
         <div className="space-y-1">
           {[...Array(5)].map((_, i) => (
-            <div key={i} className="p-1 bg-white rounded border animate-pulse">
+            <div key={i} className="p-1 bg-white rounded border animate-pulse border-[#E5E7EB]">
               <div className="flex items-center mb-1">
                 <div className="w-4 h-4 bg-gray-300 rounded mr-2"></div>
                 <div className="h-3 bg-gray-300 rounded w-20"></div>
@@ -96,14 +96,14 @@ export default function NewsSidebar({ anonymousLoggedIn, selectedProfile }: News
 
   if (error) {
     return (
-      <div className="bg-[#F5F5F5] rounded-md p-1 space-y-1 h-full flex flex-col justify-center border border-[#FFD700]">
+      <div className="bg-white rounded-md p-1 space-y-1 h-full flex flex-col justify-center border border-[#E5E7EB]">
         <div className="text-red-500 text-sm">{error}</div>
       </div>
     )
   }
 
   return (
-    <div className="bg-[#F5F5F5] rounded-md p-1 space-y-1 h-full flex flex-col border border-[#FFD700]">
+    <div className="bg-white rounded-md p-1 space-y-1 h-full flex flex-col border border-[#E5E7EB]">
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-[18px] font-semibold text-[#333333]">Новости</h2>
       </div>
@@ -113,7 +113,7 @@ export default function NewsSidebar({ anonymousLoggedIn, selectedProfile }: News
           <a
             key={index}
             href={item.link}
-            className="block p-2 bg-white rounded border border-[#DDDDDD] hover:bg-[#F5F5F5] transition-colors no-underline"
+            className="block p-2 bg-white rounded border border-[#E5E7EB] hover:bg-[#F8F9FA] transition-colors no-underline"
             target="_blank"
             rel="noopener noreferrer"
           >
@@ -129,7 +129,7 @@ export default function NewsSidebar({ anonymousLoggedIn, selectedProfile }: News
         )}
       </div>
 
-      <div className="pt-1 border-t border-[#DDDDDD]">
+      <div className="pt-1 border-t border-[#E5E7EB]">
         <a href="https://www.consultant.ru/legalnews/" className="text-[14px] text-[#0066CC] hover:underline block">
           Все новости →
         </a>

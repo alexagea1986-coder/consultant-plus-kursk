@@ -52,7 +52,7 @@ export default function Header({ anonymousLoggedIn, onAnonymousLogin, selectedPr
 
 
   return (
-    <header className="bg-white border-b border-gray-200 shadow-sm px-4 py-2">
+    <header className="bg-white shadow-sm px-4 py-2">
       <div className="max-w-6xl mx-auto flex items-center justify-between">
         {/* Logo */}
         <div className="flex items-center">
@@ -118,6 +118,6 @@ export default function Header({ anonymousLoggedIn, onAnonymousLogin, selectedPr
           <a href="tel:+74712526969" className="hover:text-[#0066CC]">тел. (4712) 52-69-69</a>
         </div>
       </div>
-    </header>);
-
+    </header>
+  );
 }
