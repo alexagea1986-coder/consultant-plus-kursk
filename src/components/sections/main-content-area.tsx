@@ -199,7 +199,7 @@ export default function MainContentArea({ anonymousLoggedIn, onAnonymousLogin, s
                 <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
                   message.role === 'user' 
                     ? 'bg-primary text-primary-foreground' 
-                    : 'bg-muted text-muted-foreground'
+                    : 'bg-muted text-[#333333]'
                 }`}>
                   {message.role === 'assistant' ? (
                     <ReactMarkdown
