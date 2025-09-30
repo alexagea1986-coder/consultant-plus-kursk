@@ -40,7 +40,6 @@ export default function MainContentArea({ anonymousLoggedIn, onAnonymousLogin, s
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [followUpQuestions, setFollowUpQuestions] = useState<string[]>([]);
-  const [selectedFollowUp, setSelectedFollowUp] = useState<string | null>(null);
 
   const hasChat = messages.length > 0 || isLoading;
 
@@ -85,7 +84,6 @@ export default function MainContentArea({ anonymousLoggedIn, onAnonymousLogin, s
     setMessages(newMessages);
     setInput('');
     setFollowUpQuestions([]);
-    setSelectedFollowUp(null);
 
     try {
       setIsLoading(true);
@@ -160,29 +158,6 @@ export default function MainContentArea({ anonymousLoggedIn, onAnonymousLogin, s
       <div className="flex-1 mb-4">
         {hasChat && (
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {followUpQuestions.length > 0 && selectedFollowUp === null && (
-              <div className="p-4 bg-muted/50 rounded-lg space-y-2">
-                <p className="text-sm font-medium text-muted-foreground">Уточняющие вопросы:</p>
-                <div className="space-y-1">
-                  {followUpQuestions.map((question, index) => (
-                    <button
-                      key={index}
-                      onClick={async () => {
-                        const followUpInput = question;
-                        setInput(followUpInput);
-                        // Auto-submit
-                        const e = { preventDefault: () => {} } as React.FormEvent;
-                        await handleSubmit(e);
-                      }}
-                      className="w-full text-left px-3 py-2 bg-background border border-border rounded-md hover:bg-accent text-sm transition-colors"
-                    >
-                      {question}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
             {isLoading && !selectedFollowUp && (
               <div className="flex justify-start p-4">
                 <div className="max-w-xs lg:max-w-md px-4 py-2 bg-muted text-muted-foreground rounded-lg animate-pulse">
@@ -199,33 +174,51 @@ export default function MainContentArea({ anonymousLoggedIn, onAnonymousLogin, s
                 <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
                   message.role === 'user' 
                     ? 'bg-primary text-primary-foreground' 
-                    : 'bg-muted text-[#333333]'
+                    : 'bg-card text-[#333333]'
                 }`}>
                   {message.role === 'assistant' ? (
                     <ReactMarkdown
                       remarkPlugins={[remarkGfm]}
                       rehypePlugins={[rehypeRaw]}
+                      className="text-[#333333]"
                       components={{
                         strong: ({ children }) => <strong className="font-bold">{children}</strong>,
-                        p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-                        ul: ({ children }) => <ul className="list-disc ml-4 mb-2">{children}</ul>,
-                        ol: ({ children }) => <ol className="list-decimal ml-4 mb-2">{children}</ol>,
-                        li: ({ children }) => <li className="mb-1">{children}</li>,
+                        p: ({ children }) => <p className="mb-2 last:mb-0 text-[#333333]">{children}</p>,
+                        ul: ({ children }) => <ul className="list-disc ml-4 mb-2 text-[#333333]">{children}</ul>,
+                        ol: ({ children }) => <ol className="list-decimal ml-4 mb-2 text-[#333333]">{children}</ol>,
+                        li: ({ children }) => <li className="mb-1 text-[#333333]">{children}</li>,
                       }}
                     >
                       {message.content}
                     </ReactMarkdown>
                   ) : (
-                    message.content
+                    <span className="text-[#333333]">{message.content}</span>
                   )}
                 </div>
               </div>
             ))}
 
-            {selectedFollowUp && (
+            {followUpQuestions.length > 0 && (
               <div className="flex justify-start">
-                <div className="max-w-xs lg:max-w-md px-4 py-2 bg-primary text-primary-foreground rounded-lg">
-                  {selectedFollowUp}
+                <div className="max-w-xs lg:max-w-md p-4 space-y-2 bg-card border border-border rounded-lg">
+                  <p className="text-sm font-medium text-[#666666]">Смежные вопросы:</p>
+                  <div className="space-y-1">
+                    {followUpQuestions.map((question, index) => (
+                      <button
+                        key={index}
+                        onClick={async () => {
+                          const followUpInput = question;
+                          setInput(followUpInput);
+                          const e = { preventDefault: () => {} } as React.FormEvent;
+                          await handleSubmit(e);
+                          setFollowUpQuestions([]);
+                        }}
+                        className="w-full text-left px-3 py-2 bg-background border border-border rounded-md hover:bg-accent text-sm transition-colors text-[#333333]"
+                      >
+                        {question}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
