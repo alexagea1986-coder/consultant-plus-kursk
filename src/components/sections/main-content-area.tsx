@@ -156,7 +156,7 @@ export default function MainContentArea({ anonymousLoggedIn, onAnonymousLogin, s
         
         {/* Input */}
         <div 
-          className="flex gap-2 border border-[#DDDDDD] rounded p-3 cursor-text" 
+          className="flex gap-2 border-2 border-[#FFD700] bg-[#FFD700] rounded p-3 cursor-text text-white" 
           onClick={() => inputRef.current?.focus()}
         >
           <Input
@@ -165,7 +165,7 @@ export default function MainContentArea({ anonymousLoggedIn, onAnonymousLogin, s
             onChange={(e) => setInput(e.target.value)}
             placeholder="Введите ваш вопрос..."
             onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-            className="flex-1 text-[14px] bg-transparent border-none focus:border-none focus:ring-0 px-0"
+            className="flex-1 text-[14px] bg-transparent border-none focus:border-none focus:ring-0 px-0 text-white placeholder:text-white/70"
             disabled={isLoading} 
           />
           <Button 
