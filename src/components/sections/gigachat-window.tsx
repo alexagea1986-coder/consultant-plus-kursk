@@ -59,7 +59,7 @@ export default function GigaChatWindow({ selectedProfile }: GigaChatWindowProps)
         ) : (
           messages.map((msg, index) => (
             <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[80%] p-3 rounded ${msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground'}`}>
+              <div className={`max-w-[80%] p-3 rounded ${msg.role === 'user' ? 'bg-secondary/5 text-foreground' : 'bg-muted text-foreground'}`}>
                 <p className="text-[14px]">{msg.content}</p>
               </div>
             </div>
