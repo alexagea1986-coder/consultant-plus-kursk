@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { BookOpen, MessageCircle, Send } from "lucide-react";
+import { BookOpen, MessageCircle, Send, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -62,6 +62,11 @@ export default function MainContentArea({ anonymousLoggedIn, onAnonymousLogin, s
     }
   }, [messages]);
 
+  const handleClear = () => {
+    setMessages([]);
+    localStorage.removeItem('chatHistory');
+  };
+
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
 
@@ -104,9 +109,20 @@ export default function MainContentArea({ anonymousLoggedIn, onAnonymousLogin, s
     <div className="flex flex-col h-full space-y-4">
       {/* Gigachat section */}
       <div className="flex-1 flex flex-col bg-white rounded-lg border border-[#DDDDDD] shadow-sm px-6 pt-2">
-        <h2 className="text-[18px] font-semibold text-[#333333] mb-4 flex items-center">
-          <MessageCircle className="w-5 h-5 mr-2 text-[#0066CC]" />Быстрый поиск Ai
-        </h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-[18px] font-semibold text-[#333333] flex items-center">
+            <MessageCircle className="w-5 h-5 mr-2 text-[#0066CC]" />Быстрый поиск Ai
+          </h2>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={handleClear} 
+            className="text-[#666666] hover:text-[#333333] h-6 px-2"
+          >
+            <Trash2 className="w-4 h-4" />
+            <span className="ml-1 text-[12px]">Очистить</span>
+          </Button>
+        </div>
         
         {/* Messages */}
         <div className="flex-1 overflow-y-auto space-y-4 mb-4 p-4 bg-[#F5F5F5] rounded-lg border border-[#DDDDDD]">
