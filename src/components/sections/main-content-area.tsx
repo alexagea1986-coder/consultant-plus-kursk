@@ -210,10 +210,10 @@ export default function MainContentArea({ anonymousLoggedIn, onAnonymousLogin, s
       
       <div className="flex-1 mb-4">
         {hasChat && (
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          <div className="flex-1 overflow-y-auto p-2 sm:p-4 space-y-4">
             {isLoading && (
-              <div className="flex justify-start p-4">
-                <div className="max-w-xs lg:max-w-md px-4 py-2 bg-muted text-muted-foreground rounded-lg animate-pulse">
+              <div className="flex justify-start p-3 sm:p-4">
+                <div className="max-w-[90%] sm:max-w-md px-3 sm:px-4 py-2 sm:py-2 bg-muted text-muted-foreground rounded-lg animate-pulse">
                   <div className="flex items-center gap-2">
                     <div className="w-5 h-5 bg-muted-foreground/30 rounded-full animate-spin"></div>
                     Ищу информацию...
@@ -224,7 +224,7 @@ export default function MainContentArea({ anonymousLoggedIn, onAnonymousLogin, s
 
             {messages.map((message, index) => (
               <div key={index} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                <div className={`max-w-[90%] sm:max-w-md px-3 sm:px-4 py-2 sm:py-2 rounded-lg ${
                   message.role === 'user' 
                     ? 'bg-purple-200' 
                     : 'bg-card text-[#333333]'
@@ -252,7 +252,7 @@ export default function MainContentArea({ anonymousLoggedIn, onAnonymousLogin, s
 
             {followUpQuestions.length > 0 && (
               <div className="flex justify-start">
-                <div className="max-w-xs lg:max-w-md p-4 space-y-2 bg-card border border-border rounded-lg">
+                <div className="max-w-[95%] sm:max-w-md p-3 sm:p-4 space-y-2 bg-card border border-border rounded-lg">
                   <p className="text-sm font-medium text-[#666666]">Смежные вопросы:</p>
                   <div className="space-y-1">
                     {followUpQuestions.map((question, index) => (
@@ -261,7 +261,7 @@ export default function MainContentArea({ anonymousLoggedIn, onAnonymousLogin, s
                         onClick={() => {
                           sendMessage(question);
                         }}
-                        className="w-full text-left px-3 py-2 bg-background border border-border rounded-md hover:bg-accent text-sm transition-colors text-[#333333]"
+                        className="w-full text-left px-3 py-2 sm:py-3 bg-background border border-border rounded-md hover:bg-accent text-sm transition-colors text-[#333333] min-h-[44px] flex items-center"
                       >
                         {question}
                       </button>
@@ -275,7 +275,7 @@ export default function MainContentArea({ anonymousLoggedIn, onAnonymousLogin, s
       </div>
       
       <div 
-        className="bg-[#FFD700] p-1 rounded w-full max-w-full overflow-hidden" 
+        className="bg-[#FFD700] p-1 rounded w-full max-w-full overflow-hidden md:p-2" 
         onClick={() => textareaRef.current?.focus()}
       >
         <div className="flex w-full max-w-full min-w-0 border-2 border-[#B8860B] rounded-lg overflow-hidden bg-white focus-within:border-2 focus-within:border-[#B8860B] focus-within:outline-none focus-within:ring-0 focus-within:shadow-none flex-nowrap">
@@ -285,14 +285,14 @@ export default function MainContentArea({ anonymousLoggedIn, onAnonymousLogin, s
             onChange={(e) => setInput(e.target.value)}
             placeholder="Введите ваш вопрос..."
             onKeyDown={handleKeyDown}
-            className="flex-1 min-w-0 max-w-full w-full text-[14px] border-0 rounded-none px-4 py-2 text-[#333333] placeholder:text-[#666666] focus:border-0 focus:ring-0 focus:outline-none focus:shadow-none focus-visible:ring-0 focus-visible:shadow-none resize-none min-h-[40px] break-words overflow-wrap-break-word field-sizing-fixed"
+            className="flex-1 min-w-0 max-w-full w-full text-[14px] sm:text-[16px] border-0 rounded-none px-3 sm:px-4 py-2 sm:py-3 text-[#333333] placeholder:text-[#666666] focus:border-0 focus:ring-0 focus:outline-none focus:shadow-none focus-visible:ring-0 focus-visible:shadow-none resize-none min-h-[40px] sm:min-h-[44px] break-words overflow-wrap-break-word field-sizing-fixed"
             disabled={isLoading}
             style={{ overflow: 'hidden', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}
           />
           <Button 
             onClick={handleSubmit} 
             disabled={!input.trim() || isLoading} 
-            className="flex-shrink-0 bg-white text-[#000000] hover:bg-gray-100 border-0 rounded-none font-bold px-8 py-2 min-w-[100px] focus:outline-none focus:ring-0 focus:border-0 focus:shadow-none focus-visible:ring-0 focus-visible:shadow-none"
+            className="flex-shrink-0 bg-white text-[#000000] hover:bg-gray-100 border-0 rounded-none font-bold px-6 sm:px-8 py-2 sm:py-3 min-w-[80px] sm:min-w-[100px] text-sm sm:text-base focus:outline-none focus:ring-0 focus:border-0 focus:shadow-none focus-visible:ring-0 focus-visible:shadow-none"
           >
             Найти
           </Button>
