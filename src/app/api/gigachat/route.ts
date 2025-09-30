@@ -66,6 +66,37 @@ async function getAccessToken(): Promise<string> {
   return tokenData.access_token;
 }
 
+async function ollama_search(query: string, top_k: number = 5): Promise<string> {
+  const OLLAMA_KEY = process.env.OLLAMA_KEY;
+  if (!OLLAMA_KEY) {
+    console.warn('OLLAMA_KEY not set, skipping web search');
+    return '';
+  }
+
+  try {
+    const response = await fetch('https://ollama.com/api/web_search', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${OLLAMA_KEY}`,
+      },
+      body: JSON.stringify({ query, max_results: top_k }),
+    });
+
+    if (!response.ok) {
+      console.error('Ollama search failed:', response.status);
+      return '';
+    }
+
+    const data = await response.json();
+    const items = data.results || [];
+    return items.map((item: any, i: number) => `[${i+1}] ${item.title}\n${item.text}\n${item.url}`).join('\n\n');
+  } catch (error) {
+    console.error('Ollama search error:', error);
+    return '';
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -82,6 +113,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid messages format' }, { status: 400 });
     }
 
+    // Extract the last user message as search query
+    const lastUserMessage = messagesList[messagesList.length - 1]?.content || '';
+    const searchContext = await ollama_search(lastUserMessage);
+
     // Map English profile value to Russian label
     const profileMap: { [key: string]: string } = {
       'universal': 'Универсальный',
@@ -96,7 +131,7 @@ export async function POST(request: NextRequest) {
     };
     const profileLabel = profileMap[selectedProfile] || 'Универсальный';
 
-    const systemPrompt = `Ты — эксперт в области российского законодательства и правоприменительной практики, работающий в формате СПС «КонсультантПлюс». Твоя задача — предоставлять пользователям готовые практические решения по вопросам:
+    let systemPrompt = `Ты — эксперт в области российского законодательства и правоприменительной практики, работающий в формате СПС «КонсультантПлюс». Твоя задача — предоставлять пользователям готовые практические решения по вопросам:
 
 • налогообложения (включая УСН, ЕНВД, ПСН, НДС, налог на прибыль и др.),
 • бухгалтерского и налогового учёта (бюджетного и коммерческого),
@@ -156,6 +191,11 @@ export async function POST(request: NextRequest) {
 Твоя база знаний актуальна на дату твоего обучения. Не указывай конкретные даты актуальности информации в ответах, если не уверен в точности данных на текущую дату. Если пользователь спрашивает о будущих изменениях законодательства, честно сообщай об отсутствии достоверной информации.
 
 Ты не даёшь общих советов — ты даёшь готовое юридически обоснованное решение, как это сделал бы эксперт «КонсультантПлюс».`;
+
+    // Append search context to system prompt if available
+    if (searchContext) {
+      systemPrompt += `\n\nДополнительный контекст из интернета (используй для актуализации информации):\n${searchContext}`;
+    }
 
     const fullMessages = [
       { role: 'system', content: systemPrompt },
