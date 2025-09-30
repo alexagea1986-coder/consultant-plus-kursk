@@ -66,6 +66,7 @@ export default function MainContentArea({ anonymousLoggedIn, onAnonymousLogin, s
 
   const handleClear = () => {
     setMessages([]);
+    setInput('');
     localStorage.removeItem('chatHistory');
   };
 
