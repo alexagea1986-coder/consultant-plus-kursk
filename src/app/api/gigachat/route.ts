@@ -1,9 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import https from "node:https";
-
-const httpsAgent = new https.Agent({
-  rejectUnauthorized: false
-});
+import { randomUUID } from "crypto";
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,62 +9,86 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid messages format" }, { status: 400 });
     }
 
-    // Get token
-    const credentials = Buffer.from(
-      `${process.env.GIGACHAT_CLIENT_ID}:${process.env.GIGACHAT_CLIENT_SECRET}`
-    ).toString("base64");
+    const clientId = process.env.GIGACHAT_CLIENT_ID;
+    const clientSecret = process.env.GIGACHAT_CLIENT_SECRET;
 
+    if (!clientId || !clientSecret) {
+      return NextResponse.json({ content: "Конфигурация API не настроена." }, { status: 500 });
+    }
+
+    const clientSecretKey = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
+
+    // Get token manually
     const tokenResponse = await fetch("https://ngw.devices.sberbank.ru:9443/api/v2/oauth", {
       method: "POST",
       headers: {
-        "Authorization": `Basic ${credentials}`,
-        "Accept": "application/json",
         "Content-Type": "application/x-www-form-urlencoded",
+        "Accept": "application/json",
+        "RqUID": randomUUID(),
+        "Authorization": `Basic ${clientSecretKey}`,
       },
       body: new URLSearchParams({
-        grant_type: "client_credentials",
-        scope: "gigaChat-api"
-      }).toString(),
-      agent: httpsAgent,
-      dispatcher: httpsAgent  // For compatibility
+        scope: "GIGACHAT_API_PERS"  // or GIGACHAT_API_CORP if corporate
+      }),
     });
 
     if (!tokenResponse.ok) {
       const errorText = await tokenResponse.text();
       console.error("Token error:", tokenResponse.status, errorText);
-      throw new Error(`Token request failed: ${tokenResponse.status} - ${errorText}`);
+      return NextResponse.json({ 
+        content: "Ошибка авторизации. Проверьте credentials.", 
+        error: errorText 
+      }, { status: 500 });
     }
 
-    const { access_token } = await tokenResponse.json();
+    const tokenData = await tokenResponse.json();
+    const accessToken = tokenData.access_token;
+
+    if (!accessToken) {
+      return NextResponse.json({ content: "Не удалось получить токен." }, { status: 500 });
+    }
+
+    // System prompt based on profile
+    const systemPrompt = `Ты эксперт в области ${selectedProfile}. Отвечай на вопросы пользователя на русском языке, предоставляя точную и полезную информацию. Если возможно, добавь в конце ответа раздел "Уточняющие вопросы" с 2-3 возможными следующими вопросами, нумерованными.`;
+
+    const formattedMessages = [
+      { role: "system", content: systemPrompt },
+      ...messages.map((msg: any) => ({ role: msg.role, content: msg.content })),
+    ];
 
     // Chat completion
-    const completionResponse = await fetch("https://gigachat.devices.sber.ru/api/v1/chat/completions", {
+    const chatResponse = await fetch("https://gigachat.devices.sberbank.ru/api/v1/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${access_token}`,
+        "Authorization": `Bearer ${accessToken}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "GigaChat-2-Pro",
-        messages,
-        stream: false,
+        model: "GigaChat-2",
+        messages: formattedMessages,
+        temperature: 0.7,
+        max_tokens: 1000,
       }),
-      agent: httpsAgent,
-      dispatcher: httpsAgent
     });
 
-    if (!completionResponse.ok) {
-      const errorText = await completionResponse.text();
-      console.error("Completion error:", completionResponse.status, errorText);
-      throw new Error(`Completion failed: ${completionResponse.status} - ${errorText}`);
+    if (!chatResponse.ok) {
+      const errorText = await chatResponse.text();
+      console.error("Chat error:", chatResponse.status, errorText);
+      return NextResponse.json({ 
+        content: "Ошибка при генерации ответа.", 
+        error: errorText 
+      }, { status: 500 });
     }
 
-    const completion = await completionResponse.json();
-    const content = completion.choices[0]?.message?.content || "No response from GigaChat";
+    const chatData = await chatResponse.json();
+    const content = chatData.choices[0]?.message?.content || "Не удалось получить ответ от модели.";
 
     return NextResponse.json({ content });
-  } catch (error) {
+  } catch (error: any) {
     console.error("GigaChat error:", error);
-    return NextResponse.json({ content: error.message }, { status: 500 });
+    return NextResponse.json({
+      content: "Извините, произошла ошибка при обращении к модели. Попробуйте позже.",
+      error: error.message || JSON.stringify(error),
+    }, { status: 500 });
   }
 }
