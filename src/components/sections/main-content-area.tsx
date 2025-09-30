@@ -157,25 +157,27 @@ export default function MainContentArea({ anonymousLoggedIn, onAnonymousLogin, s
         
         {/* Input */}
         <div 
-          className="flex gap-2 border-1 border-[#FFD700] bg-[#FFD700] rounded p-0 cursor-text text-white" 
+          className="bg-[#FFD700] p-4 rounded" 
           onClick={() => inputRef.current?.focus()}
         >
-          <Input
-            ref={inputRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Введите ваш вопрос..."
-            onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-            className="flex-1 text-[14px] bg-white border border-[#DDDDDD] rounded px-3 py-6 text-[#333333] placeholder:text-[#666666] focus:border-[#0066CC] focus:ring-0"
-            disabled={isLoading} 
-          />
-          <Button 
-            onClick={handleSend} 
-            disabled={!input.trim() || isLoading} 
-            className="bg-[#0066CC] text-white hover:bg-[#4A90E2] px-4 py-6 rounded border border-[#0066CC] min-w-[40px]"
-          >
-            <Send className="w-4 h-4" />
-          </Button>
+          <div className="flex bg-white rounded">
+            <Input
+              ref={inputRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Введите ваш вопрос..."
+              onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+              className="flex-1 text-[14px] bg-white border-0 rounded-l px-4 py-2 text-[#333333] placeholder:text-[#666666] focus:border-0 focus:ring-0"
+              disabled={isLoading} 
+            />
+            <Button 
+              onClick={handleSend} 
+              disabled={!input.trim() || isLoading} 
+              className="bg-[#FFD700] text-[#333333] hover:bg-[#DAA520] border-0 px-8 py-2 rounded-r font-semibold min-w-[100px] border-l-4 border-[#FFD700]"
+            >
+              Найти
+            </Button>
+          </div>
         </div>
       </div>
     </div>
