@@ -75,11 +75,8 @@ export default function Header({ anonymousLoggedIn, onAnonymousLogin }: HeaderPr
           </nav>
 
           {/* Contact Info */}
-          <div className="hidden md:block text-right text-sm text-[#666666] ml-8">
-            <div className="space-y-1">
-              <a href="tel:+74712526969" className="block hover:text-[#0066CC]">тел. (4712) 52-69-69</a>
-              <a href="tel:+78002000527" className="block hover:text-[#0066CC]">тел. 8-800-200-05-27</a>
-            </div>
+          <div className="hidden md:flex items-center text-sm text-[#666666] ml-8">
+            <a href="tel:+74712526969" className="hover:text-[#0066CC]">тел. (4712) 52-69-69</a>
           </div>
         </div>
       </div>
