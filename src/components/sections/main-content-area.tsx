@@ -180,7 +180,6 @@ export default function MainContentArea({ anonymousLoggedIn, onAnonymousLogin, s
                     <ReactMarkdown
                       remarkPlugins={[remarkGfm]}
                       rehypePlugins={[rehypeRaw]}
-                      className="text-[#333333]"
                       components={{
                         strong: ({ children }) => <strong className="font-bold">{children}</strong>,
                         p: ({ children }) => <p className="mb-2 last:mb-0 text-[#333333]">{children}</p>,
