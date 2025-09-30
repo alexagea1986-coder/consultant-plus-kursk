@@ -14,14 +14,14 @@ export default function SearchChatInterface({ selectedProfile }: SearchChatInter
 
   return (
     <div className="bg-[#FFD700] rounded-b-md p-4 mb-6">
-      <div className="flex items-center gap-3 max-w-4xl mx-auto">
+      <div className="flex items-center gap-3 max-w-3xl mx-auto">
         <div className="flex-1 relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#333333] w-4 h-4" />
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={`Задайте вопрос по ${selectedProfile.toLowerCase()}...`}
-            className="pl-10 pr-4 bg-white border-4 border-[#FFD700] rounded text-[#333333] placeholder-[#666666] focus:ring-2 focus:ring-[#0066CC] focus:border-transparent"
+            className="pl-10 pr-1 bg-white border-4 border-[#FFD700] rounded text-[#333333] placeholder-[#666666] focus:ring-2 focus:ring-[#0066CC] focus:border-transparent"
           />
         </div>
         <Button 
