@@ -8,7 +8,6 @@ import { Textarea } from "@/components/ui/textarea";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
-import SearchChatInterface from "./search-chat-interface";
 
 interface MainContentAreaProps {
   anonymousLoggedIn: boolean;
@@ -21,22 +20,284 @@ interface Message {
   content: string;
 }
 
-export default function MainContentArea({
-  anonymousLoggedIn,
-  onAnonymousLogin,
-  selectedProfile,
-}: {
-  anonymousLoggedIn: boolean;
-  onAnonymousLogin: () => void;
-  selectedProfile: string;
-}) {
+export default function MainContentArea({ anonymousLoggedIn, onAnonymousLogin, selectedProfile }: MainContentAreaProps) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  if (!anonymousLoggedIn) {
+    return (
+      <div className="text-center py-8 bg-white rounded-md border border-[#DDDDDD] p-6 min-h-full flex flex-col justify-center">
+        <h2 className="text-[20px] font-semibold text-[#333333] mb-4">КонсультантПлюс: Студент</h2>
+        <p className="text-[14px] text-[#666666] mb-6">Для доступа к ресурсам нажмите "Войти без авторизации"</p>
+        <Button onClick={onAnonymousLogin} className="bg-[#FFD700] text-[#333333] px-6 py-2 rounded">
+          Войти без авторизации
+        </Button>
+      </div>);
+  }
+
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [followUpQuestions, setFollowUpQuestions] = useState<string[]>([]);
+
+  const hasChat = messages.length > 0 || isLoading;
+
+  const scrollToBottom = useCallback(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, []);
+
+  // Auto-scroll to bottom when messages change and not loading
+  useEffect(() => {
+    if (!isLoading) {
+      scrollToBottom();
+    }
+  }, [messages, isLoading, scrollToBottom]);
+
+  // Load messages from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('chatHistory');
+    if (saved) {
+      setMessages(JSON.parse(saved));
+    }
+  }, []);
+
+  // Save messages to localStorage after updates
+  useEffect(() => {
+    if (messages.length > 0) {
+      localStorage.setItem('chatHistory', JSON.stringify(messages));
+    }
+  }, [messages]);
+
+  const handleClear = () => {
+    setMessages([]);
+    setInput('');
+    setIsLoading(false);
+    localStorage.removeItem('chatHistory');
+  };
+
+  const parseFollowUpQuestions = (content: string): { mainContent: string; followUps: string[] } => {
+    const lines = content.split('\n');
+    
+    let questionStartIndex = -1;
+    for (let i = 0; i < lines.length; i++) {
+      const lowerLine = lines[i].toLowerCase();
+      if (lowerLine.includes('уточняющие вопросы') || lowerLine.includes('смежные вопросы') || lowerLine.includes('возможные уточняющие вопросы')) {
+        questionStartIndex = i;
+        break;
+      }
+    }
+
+    let mainContentLines: string[];
+    let startIndexForQuestions: number;
+
+    if (questionStartIndex === -1) {
+      return { mainContent: content, followUps: [] };
+    } else if (questionStartIndex === 0) {
+      mainContentLines = [lines[0]];  // Include header in main content
+      startIndexForQuestions = 1;
+    } else {
+      mainContentLines = lines.slice(0, questionStartIndex);
+      startIndexForQuestions = questionStartIndex + 1;
+    }
+
+    const followUps: string[] = [];
+    for (let i = startIndexForQuestions; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
+      
+      // Stop conditions
+      if (line.toLowerCase().includes('см. также') || line.toLowerCase().includes('see also') || 
+          line.includes('end') || line.startsWith('---') || line.startsWith('=')) {
+        // Optionally add this line to mainContent if it's "См. также"
+        if (line.toLowerCase().includes('см. также') || line.toLowerCase().includes('see also')) {
+          mainContentLines.push(lines[i]);
+        }
+        break;
+      }
+      
+      // Add if it's likely a question
+      if (line.endsWith('?') && line.length > 10) {
+        const cleanQuestion = line.replace(/^\s*[-•*+\d\.\)\[]+\s*/g, '').trim();
+        if (cleanQuestion.endsWith('?') && cleanQuestion.length > 5) {
+          followUps.push(cleanQuestion);
+        }
+      } else if (followUps.length > 0) {
+        // Stop if a non-question after questions started
+        break;
+      }
+    }
+
+    const mainContent = mainContentLines.join('\n').trim();
+
+    return { mainContent, followUps };
+  };
+
+  const sendMessage = async (userMessage: string) => {
+    const newMessages = [...messages, { role: 'user', content: userMessage }];
+    setMessages(newMessages);
+    setFollowUpQuestions([]);
+    setInput('');
+    
+    try {
+      setIsLoading(true);
+      const response = await fetch('/api/gigachat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: newMessages, selectedProfile }),
+      });
+
+      if (!response.ok) throw new Error('API request failed');
+
+      const { content } = await response.json();
+
+      const { mainContent, followUps: newFollowUps } = parseFollowUpQuestions(content);
+
+      setMessages([...newMessages, { role: 'assistant', content: mainContent }]);
+      setFollowUpQuestions(newFollowUps);
+
+    } catch (error) {
+      console.error('Chat error:', error);
+      setMessages([...newMessages, { role: 'assistant', content: 'Извините, произошла ошибка. Попробуйте позже.' }]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim()) return;
+
+    await sendMessage(input);
+  };
+
+  // Auto-resize textarea
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.style.height = 'auto';
+      const maxHeight = 120; // Max height in px, approx 5-6 lines
+      const scrollHeight = textarea.scrollHeight;
+      textarea.style.height = Math.min(scrollHeight, maxHeight) + 'px';
+    }
+  }, [input]);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit(e);
+    }
+  };
+
   return (
-    <div className="space-y-6">
-      <SearchChatInterface
-        anonymousLoggedIn={anonymousLoggedIn}
-        onAnonymousLogin={onAnonymousLogin}
-        selectedProfile={selectedProfile}
-      />
+    <div className="flex flex-col h-full bg-white rounded-lg border border-[#DDDDDD] shadow-sm px-6 pt-2">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-[18px] font-semibold text-[#333333] flex items-center">
+          <Search className="w-5 h-5 mr-2 scale-x-[-1] stroke-[#FFD700]" strokeWidth={2} />
+          Быстрый нейропоиск
+        </h2>
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={handleClear} 
+          disabled={isLoading}
+          className="text-[#666666] hover:text-[#333333] flex items-center gap-1 h-6 px-2 text-xs"
+        >
+          <Trash2 className="w-4 h-4" />
+          <span className="text-[12px]">Очистить</span>
+        </Button>
+      </div>
+      
+      <div className="flex-1 mb-4">
+        {hasChat && (
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            {isLoading && (
+              <div className="flex justify-start p-4">
+                <div className="max-w-xs lg:max-w-md px-4 py-2 bg-muted text-muted-foreground rounded-lg animate-pulse">
+                  <div className="flex items-center gap-2">
+                    <div className="w-5 h-5 bg-muted-foreground/30 rounded-full animate-spin"></div>
+                    Ищу информацию...
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {messages.map((message, index) => (
+              <div key={index} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                  message.role === 'user' 
+                    ? 'bg-purple-200' 
+                    : 'bg-card text-[#333333]'
+                }`}>
+                  {message.role === 'assistant' ? (
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      rehypePlugins={[rehypeRaw]}
+                      components={{
+                        strong: ({ children }) => <strong style={{fontWeight: "bold"}}>{children}</strong>,
+                        p: ({ children }) => <p style={{marginBottom: "0.5rem", color: "#333333"}}>{children}</p>,
+                        ul: ({ children }) => <ul style={{listStyleType: "disc", marginLeft: "1rem", marginBottom: "0.5rem", color: "#333333"}}>{children}</ul>,
+                        ol: ({ children }) => <ol style={{listStyleType: "decimal", marginLeft: "1rem", marginBottom: "0.5rem", color: "#333333"}}>{children}</ol>,
+                        li: ({ children }) => <li style={{marginBottom: "0.25rem", color: "#333333"}}>{children}</li>,
+                      }}
+                    >
+                      {message.content}
+                    </ReactMarkdown>
+                  ) : (
+                    <span className="text-[#333333]">{message.content}</span>
+                  )}
+                </div>
+              </div>
+            ))}
+
+            {followUpQuestions.length > 0 && (
+              <div className="flex justify-start">
+                <div className="max-w-xs lg:max-w-md p-4 space-y-2 bg-card border border-border rounded-lg">
+                  <p className="text-sm font-medium text-[#666666]">Смежные вопросы:</p>
+                  <div className="space-y-1">
+                    {followUpQuestions.map((question, index) => (
+                      <button
+                        key={index}
+                        onClick={() => {
+                          sendMessage(question);
+                        }}
+                        className="w-full text-left px-3 py-2 bg-background border border-border rounded-md hover:bg-accent text-sm transition-colors text-[#333333]"
+                      >
+                        {question}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+      
+      <div 
+        className="bg-[#FFD700] p-1 rounded w-full max-w-full overflow-hidden" 
+        onClick={() => textareaRef.current?.focus()}
+      >
+        <div className="flex w-full max-w-full min-w-0 border-2 border-[#B8860B] rounded-lg overflow-hidden bg-white focus-within:border-2 focus-within:border-[#B8860B] focus-within:outline-none focus-within:ring-0 focus-within:shadow-none flex-nowrap">
+          <Textarea
+            ref={textareaRef}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Введите ваш вопрос..."
+            onKeyDown={handleKeyDown}
+            className="flex-1 min-w-0 max-w-full w-full text-[14px] border-0 rounded-none px-4 py-2 text-[#333333] placeholder:text-[#666666] focus:border-0 focus:ring-0 focus:outline-none focus:shadow-none focus-visible:ring-0 focus-visible:shadow-none resize-none min-h-[40px] break-words overflow-wrap-break-word field-sizing-fixed"
+            disabled={isLoading}
+            style={{ overflow: 'hidden', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}
+          />
+          <Button 
+            onClick={handleSubmit} 
+            disabled={!input.trim() || isLoading} 
+            className="flex-shrink-0 bg-white text-[#000000] hover:bg-gray-100 border-0 rounded-none font-bold px-8 py-2 min-w-[100px] focus:outline-none focus:ring-0 focus:border-0 focus:shadow-none focus-visible:ring-0 focus-visible:shadow-none"
+          >
+            Найти
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }
