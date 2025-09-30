@@ -21,8 +21,6 @@ export default function Home() {
       <Header 
         anonymousLoggedIn={anonymousLoggedIn}
         onAnonymousLogin={handleAnonymousLogin}
-        selectedProfile={selectedProfile}
-        onProfileChange={setSelectedProfile}
       />
       
       <main className="flex-1">
@@ -30,6 +28,7 @@ export default function Home() {
           newsSidebar={<NewsSidebar 
             anonymousLoggedIn={anonymousLoggedIn} 
             selectedProfile={selectedProfile}
+            onProfileChange={setSelectedProfile}
           />}
           aiSearch={
             <MainContentArea 

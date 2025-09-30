@@ -54,37 +54,6 @@ export default function Header({ anonymousLoggedIn, onAnonymousLogin, selectedPr
   return (
     <header className="bg-white border-b border-gray-200 shadow-sm px-4 py-2">
       <div className="max-w-6xl mx-auto flex items-center justify-between">
-        {/* Logo */}
-        <div className="flex items-center">
-          <Image
-            src="https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/test-clones/8548ce4b-c4e7-49fc-aeb1-0d89445da897-consultant-ru/assets/images/logoCircle-2.svg"
-            alt="КонсультантПлюс"
-            width={40}
-            height={40}
-            className="mr-3" />
-
-          <div>
-            <span className="text-xl font-bold text-[#0066CC] whitespace-pre-line block">Инфо-Комплекс Плюс</span>
-            <div className="flex items-center mt-1">
-              <span className="text-[12px] font-bold text-[#0066CC] mr-2 !whitespace-pre-line">Профиль:</span>
-              <Select value={selectedProfile} onValueChange={onProfileChange}>
-                <SelectTrigger 
-                  className="text-[12px] text-[#666666] bg-white h-7 inline-flex items-center justify-between px-2"
-                >
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="text-[12px]">
-                  {profiles.map((profile) => (
-                    <SelectItem key={profile.value} value={profile.value} className="text-[12px] flex items-center">
-                      <span className="flex-1">{profile.label}</span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </div>
-
         {/* Navigation and Contact */}
         <div className="flex items-center space-x-4">
           {/* Navigation */}
