@@ -88,25 +88,33 @@ export default function Header({ anonymousLoggedIn, onAnonymousLogin, selectedPr
         {/* Navigation - centered */}
         <nav className="hidden md:flex items-center space-x-8">
           <a
-            href="/news"
+            href="https://consultant-plus-kursk.ru/"
+            target="_blank"
+            rel="noopener noreferrer"
             className="text-[14px] font-medium text-[#0066CC] hover:text-[#FFD700] transition-colors duration-200 no-underline">
 
             Новости
           </a>
           <a
-            href="/products"
+            href="https://consultant-plus-kursk.ru/o-kompanii"
+            target="_blank"
+            rel="noopener noreferrer"
             className="text-[14px] font-medium text-[#0066CC] hover:text-[#FFD700] transition-colors duration-200 no-underline">
 
             Продукты
           </a>
           <a
-            href="/about"
+            href="https://consultant-plus-kursk.ru/o-kompanii-2"
+            target="_blank"
+            rel="noopener noreferrer"
             className="text-[14px] font-medium text-[#0066CC] hover:text-[#FFD700] transition-colors duration-200 no-underline">
 
             О компании
           </a>
           <a
-            href="/contacts"
+            href="https://consultant-plus-kursk.ru/kontakty"
+            target="_blank"
+            rel="noopener noreferrer"
             className="text-[14px] font-medium text-[#0066CC] hover:text-[#FFD700] transition-colors duration-200 no-underline">
 
             Контакты
