@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { BookOpen, MessageCircle, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,10 +18,11 @@ interface Message {
 
 export default function MainContentArea({ anonymousLoggedIn, onAnonymousLogin, selectedProfile }: MainContentAreaProps) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   if (!anonymousLoggedIn) {
     return (
-      <div className="text-center py-8 bg-white rounded-md border border-[#DDDDDD] p-6">
+      <div className="text-center py-8 bg-white rounded-md border border-[#DDDDDD] p-6 min-h-full flex flex-col justify-center">
         <h2 className="text-[20px] font-semibold text-[#333333] mb-4">КонсультантПлюс: Студент</h2>
         <p className="text-[14px] text-[#666666] mb-6">Для доступа к ресурсам нажмите "Войти без авторизации"</p>
         <Button onClick={onAnonymousLogin} className="bg-[#FFD700] text-[#333333] px-6 py-2 rounded">
@@ -34,6 +35,17 @@ export default function MainContentArea({ anonymousLoggedIn, onAnonymousLogin, s
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  const scrollToBottom = useCallback(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, []);
+
+  // Auto-scroll to bottom when messages change and not loading
+  useEffect(() => {
+    if (!isLoading) {
+      scrollToBottom();
+    }
+  }, [messages, isLoading, scrollToBottom]);
 
   // Load messages from localStorage on mount
   useEffect(() => {
@@ -89,15 +101,15 @@ export default function MainContentArea({ anonymousLoggedIn, onAnonymousLogin, s
   };
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col h-full space-y-4">
       {/* Gigachat section */}
-      <div className="bg-white rounded-lg border border-[#DDDDDD] shadow-sm px-6 pt-2 pb-4">
+      <div className="flex-1 flex flex-col bg-white rounded-lg border border-[#DDDDDD] shadow-sm px-6 pt-2">
         <h2 className="text-[18px] font-semibold text-[#333333] mb-4 flex items-center">
           <MessageCircle className="w-5 h-5 mr-2 text-[#0066CC]" />Быстрый поиск Ai
         </h2>
         
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto space-y-4 mb-4 p-4 bg-[#F5F5F5] rounded-lg border border-[#DDDDDD] h-[200px]">
+        <div className="flex-1 overflow-y-auto space-y-4 mb-4 p-4 bg-[#F5F5F5] rounded-lg border border-[#DDDDDD]">
           {messages.length === 0 ? (
             <p className="text-[14px] text-[#666666] text-center italic">Задайте вопрос по выбранному профилю</p>
           ) : (
@@ -123,6 +135,7 @@ export default function MainContentArea({ anonymousLoggedIn, onAnonymousLogin, s
               <div className="bg-white p-2 rounded border border-[#DDDDDD] text-[#333333]">Генерация ответа...</div>
             </div>
           )}
+          <div ref={messagesEndRef} />
         </div>
         
         {/* Input */}
