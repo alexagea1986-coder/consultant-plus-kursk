@@ -157,23 +157,23 @@ export default function MainContentArea({ anonymousLoggedIn, onAnonymousLogin, s
         
         {/* Input */}
         <div 
-          className="py-2" 
+          className="bg-[#FFD700] p-1 rounded" 
           onClick={() => inputRef.current?.focus()}
         >
-          <div className="flex border-t-4 border-b-4 border-[#FFD700]">
+          <div className="flex border-2 border-[#B8860B] rounded-lg overflow-hidden bg-white focus-within:border-2 focus-within:border-[#B8860B] focus-within:outline-none focus-within:ring-0 focus-within:shadow-none">
             <Input
               ref={inputRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Введите ваш вопрос..."
               onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-              className="flex-1 text-[14px] bg-white border-0 border-l-4 border-[#FFD700] px-4 py-3 text-[#333333] placeholder:text-[#666666] focus:border-0 focus:ring-0"
+              className="flex-1 text-[14px] border-0 rounded-none px-4 py-2 text-[#333333] placeholder:text-[#666666] focus:border-0 focus:ring-0 focus:outline-none focus:shadow-none focus-visible:ring-0 focus-visible:shadow-none"
               disabled={isLoading} 
             />
             <Button 
               onClick={handleSend} 
               disabled={!input.trim() || isLoading} 
-              className="bg-white text-[#333333] hover:bg-[#F5F5F5] border-0 border-r-4 border-[#FFD700] px-8 py-3 font-semibold min-w-[100px]"
+              className="bg-white text-[#000000] hover:bg-gray-100 border-0 rounded-none font-bold px-8 py-2 min-w-[100px] focus:outline-none focus:ring-0 focus:border-0 focus:shadow-none focus-visible:ring-0 focus-visible:shadow-none"
             >
               Найти
             </Button>
