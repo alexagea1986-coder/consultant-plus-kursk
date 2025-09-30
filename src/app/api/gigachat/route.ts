@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import Exa from "exa-js";
 import crypto from "crypto";
+import https from "node:https";
+
+const httpsAgent = new https.Agent({
+  rejectUnauthorized: false
+});
 
 export async function POST(request: NextRequest) {
   try {
@@ -34,20 +39,25 @@ export async function POST(request: NextRequest) {
     // Generate UUID for RqUID
     const rqUID = crypto.randomUUID();
 
-    // Get access token from GigaChat OAuth
+    // Get access token from GigaChat OAuth - use pre-encoded Basic auth
+    const basicAuth = process.env.GIGACHAT_CLIENT_SECRET!;
+
     const tokenResponse = await fetch("https://ngw.devices.sberbank.ru:9443/api/v2/oauth", {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
         "Accept": "application/json",
         "RqUID": rqUID,
-        "Authorization": `Basic ${process.env.GIGACHAT_API_KEY}`,
+        "Authorization": `Basic ${basicAuth}`,
       },
       body: "scope=GIGACHAT_API_PERS",
+      agent: httpsAgent,
     });
 
     if (!tokenResponse.ok) {
-      throw new Error(`Token request failed: ${tokenResponse.status}`);
+      const errorText = await tokenResponse.text();
+      console.error("Token response error:", tokenResponse.status, errorText);
+      throw new Error(`Token request failed: ${tokenResponse.status} - ${errorText}`);
     }
 
     const tokenData = await tokenResponse.json();
@@ -70,10 +80,13 @@ export async function POST(request: NextRequest) {
         messages,
         stream: false,
       }),
+      agent: httpsAgent,
     });
 
     if (!gigachatResponse.ok) {
-      throw new Error(`GigaChat API error: ${gigachatResponse.status}`);
+      const errorText = await gigachatResponse.text();
+      console.error("GigaChat response error:", gigachatResponse.status, errorText);
+      throw new Error(`GigaChat API error: ${gigachatResponse.status} - ${errorText}`);
     }
 
     const data = await gigachatResponse.json();
