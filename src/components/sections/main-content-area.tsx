@@ -181,11 +181,11 @@ export default function MainContentArea({ anonymousLoggedIn, onAnonymousLogin, s
                       remarkPlugins={[remarkGfm]}
                       rehypePlugins={[rehypeRaw]}
                       components={{
-                        strong: ({ children }) => <strong className="font-bold">{children}</strong>,
-                        p: ({ children }) => <p className="mb-2 last:mb-0 text-[#333333]">{children}</p>,
-                        ul: ({ children }) => <ul className="list-disc ml-4 mb-2 text-[#333333]">{children}</ul>,
-                        ol: ({ children }) => <ol className="list-decimal ml-4 mb-2 text-[#333333]">{children}</ol>,
-                        li: ({ children }) => <li className="mb-1 text-[#333333]">{children}</li>,
+                        strong: ({ children }) => <strong style={{fontWeight: "bold"}}>{children}</strong>,
+                        p: ({ children }) => <p style={{marginBottom: "0.5rem", color: "#333333"}}>{children}</p>,
+                        ul: ({ children }) => <ul style={{listStyleType: "disc", marginLeft: "1rem", marginBottom: "0.5rem", color: "#333333"}}>{children}</ul>,
+                        ol: ({ children }) => <ol style={{listStyleType: "decimal", marginLeft: "1rem", marginBottom: "0.5rem", color: "#333333"}}>{children}</ol>,
+                        li: ({ children }) => <li style={{marginBottom: "0.25rem", color: "#333333"}}>{children}</li>,
                       }}
                     >
                       {message.content}
