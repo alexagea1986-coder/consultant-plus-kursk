@@ -81,7 +81,8 @@ export async function GET() {
     }
 
     // Define profiles and keywords
-    const profiles: Record<string, string[]> = {
+    type ProfileKey = 'universal' | 'accounting_hr' | 'lawyer' | 'budget_accounting' | 'procurements' | 'hr' | 'labor_safety' | 'nta' | 'universal_budget';
+    const profiles: Record<ProfileKey, string[]> = {
       universal: [] as string[],
       accounting_hr: ['бухгалтерия', 'кадры', 'налог', 'зарплата', 'НДС', 'бухучет'],
       lawyer: ['юрист', 'суд', 'закон', 'ВС РФ', 'права'],
@@ -91,26 +92,28 @@ export async function GET() {
       labor_safety: ['охрана труда', 'медосмотр', 'безопасность', 'профилактика'],
       nta: ['нормативно-технические акты', 'стандарты', 'ГОСТ', 'технические регламенты'],
       universal_budget: ['бюджет', 'государственная организация', 'финансы']
-    }
+    };
 
     // Pre-filter top 5 latest for each profile
-    const profileNews: Record<string, any[]> = {}
+    const profileNews: Record<ProfileKey, any[]> = {}
     
     // Universal: top 5 overall latest
     profileNews.universal = uniqueNews.slice(0, 5)
-    
-    // For each other profile
-    Object.keys(profiles).forEach(profile => {
-      if (profile === 'universal') return
-      const keywords = profiles[profile] as string[]
+
+    // For each other profile - use typed keys to avoid indexing issues
+    type ProfileKey = 'universal' | 'accounting_hr' | 'lawyer' | 'budget_accounting' | 'procurements' | 'hr' | 'labor_safety' | 'nta' | 'universal_budget';
+    const profileKeys: ProfileKey[] = ['accounting_hr', 'lawyer', 'budget_accounting', 'procurements', 'hr', 'labor_safety', 'nta', 'universal_budget'];
+
+    profileKeys.forEach(profile => {
+      const keywords = profiles[profile] as string[]; // Ensure typing
       const filtered = uniqueNews.filter(item =>
         keywords.some(kw =>
           item.title.toLowerCase().includes(kw.toLowerCase()) ||
           (item.description && item.description.toLowerCase().includes(kw.toLowerCase()))
         )
-      )
-      profileNews[profile] = filtered.slice(0, 5)
-    })
+      );
+      profileNews[profile] = filtered.slice(0, 5);
+    });
 
     return NextResponse.json({ profiles: profileNews })
   } catch (err) {
