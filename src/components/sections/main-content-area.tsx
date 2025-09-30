@@ -190,10 +190,10 @@ export default function MainContentArea({ anonymousLoggedIn, onAnonymousLogin, s
   };
 
   return (
-    <div className="flex flex-col h-full bg-white rounded-lg border border-[#DDDDDD] shadow-sm px-6 pt-2">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-[18px] font-semibold text-[#333333] flex items-center">
-          <Search className="w-5 h-5 mr-2 scale-x-[-1] stroke-[#FFD700]" strokeWidth={2} />
+    <div className="flex flex-col h-full bg-white rounded-lg border border-[#DDDDDD] shadow-lg px-3 sm:px-4 sm:px-6 pt-2 sm:pt-3">
+      <div className="flex justify-between items-center mb-3 sm:mb-4 pb-2 border-b border-gray-100">
+        <h2 className="text-lg sm:text-[18px] font-bold text-[#333333] flex items-center tracking-tight">
+          <Search className="w-5 h-5 sm:w-6 sm:h-6 mr-2.5 scale-x-[-1] stroke-[#FFD700]" strokeWidth={2.5} />
           Быстрый нейропоиск
         </h2>
         <Button 
@@ -201,22 +201,22 @@ export default function MainContentArea({ anonymousLoggedIn, onAnonymousLogin, s
           size="sm" 
           onClick={handleClear} 
           disabled={isLoading}
-          className="text-[#666666] hover:text-[#333333] flex items-center gap-1 h-6 px-2 text-xs"
+          className="text-[#666666] hover:text-[#333333] hover:bg-gray-50 flex items-center gap-1.5 h-9 px-3 rounded-md text-sm shadow-sm transition-all"
         >
           <Trash2 className="w-4 h-4" />
-          <span className="text-[12px]">Очистить</span>
+          <span className="text-xs sm:text-[12px]">Очистить</span>
         </Button>
       </div>
       
-      <div className="flex-1 mb-4">
+      <div className="flex-1 mb-3 sm:mb-4 overflow-hidden">
         {hasChat && (
-          <div className="flex-1 overflow-y-auto p-2 sm:p-4 space-y-4">
+          <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4 max-h-full">
             {isLoading && (
-              <div className="flex justify-start p-3 sm:p-4">
-                <div className="max-w-[90%] sm:max-w-md px-3 sm:px-4 py-2 sm:py-2 bg-muted text-muted-foreground rounded-lg animate-pulse">
-                  <div className="flex items-center gap-2">
-                    <div className="w-5 h-5 bg-muted-foreground/30 rounded-full animate-spin"></div>
-                    Ищу информацию...
+              <div className="flex justify-start">
+                <div className="max-w-[95%] sm:max-w-md px-3 sm:px-4 py-3 bg-gray-100 text-gray-600 rounded-xl shadow-sm animate-pulse">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-5 h-5 sm:w-6 sm:h-6 bg-gray-300 rounded-full animate-spin"></div>
+                    <span className="text-sm">Ищу информацию...</span>
                   </div>
                 </div>
               </div>
@@ -224,27 +224,27 @@ export default function MainContentArea({ anonymousLoggedIn, onAnonymousLogin, s
 
             {messages.map((message, index) => (
               <div key={index} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[90%] sm:max-w-md px-3 sm:px-4 py-2 sm:py-2 rounded-lg ${
+                <div className={`max-w-[95%] sm:max-w-md px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-2xl shadow-sm ${
                   message.role === 'user' 
-                    ? 'bg-purple-200' 
-                    : 'bg-card text-[#333333]'
+                    ? 'bg-purple-100' 
+                    : 'bg-white text-[#333333] border border-gray-200'
                 }`}>
                   {message.role === 'assistant' ? (
                     <ReactMarkdown
                       remarkPlugins={[remarkGfm]}
                       rehypePlugins={[rehypeRaw]}
                       components={{
-                        strong: ({ children }) => <strong style={{fontWeight: "bold"}}>{children}</strong>,
-                        p: ({ children }) => <p style={{marginBottom: "0.5rem", color: "#333333"}}>{children}</p>,
-                        ul: ({ children }) => <ul style={{listStyleType: "disc", marginLeft: "1rem", marginBottom: "0.5rem", color: "#333333"}}>{children}</ul>,
-                        ol: ({ children }) => <ol style={{listStyleType: "decimal", marginLeft: "1rem", marginBottom: "0.5rem", color: "#333333"}}>{children}</ol>,
-                        li: ({ children }) => <li style={{marginBottom: "0.25rem", color: "#333333"}}>{children}</li>,
+                        strong: ({ children }) => <strong style={{fontWeight: "bold", color: "#333333"}}>{children}</strong>,
+                        p: ({ children }) => <p style={{marginBottom: "0.75rem", color: "#333333", lineHeight: "1.5"}}>{children}</p>,
+                        ul: ({ children }) => <ul style={{listStyleType: "disc", marginLeft: "1rem", marginBottom: "0.75rem", color: "#333333"}}>{children}</ul>,
+                        ol: ({ children }) => <ol style={{listStyleType: "decimal", marginLeft: "1rem", marginBottom: "0.75rem", color: "#333333"}}>{children}</ol>,
+                        li: ({ children }) => <li style={{marginBottom: "0.25rem", color: "#333333", lineHeight: "1.4"}}>{children}</li>,
                       }}
                     >
                       {message.content}
                     </ReactMarkdown>
                   ) : (
-                    <span className="text-[#333333]">{message.content}</span>
+                    <span className="text-[#333333] font-medium">{message.content}</span>
                   )}
                 </div>
               </div>
@@ -252,16 +252,16 @@ export default function MainContentArea({ anonymousLoggedIn, onAnonymousLogin, s
 
             {followUpQuestions.length > 0 && (
               <div className="flex justify-start">
-                <div className="max-w-[95%] sm:max-w-md p-3 sm:p-4 space-y-2 bg-card border border-border rounded-lg">
-                  <p className="text-sm font-medium text-[#666666]">Смежные вопросы:</p>
-                  <div className="space-y-1">
+                <div className="max-w-[95%] sm:max-w-md p-4 space-y-2.5 bg-white border border-gray-200 rounded-2xl shadow-sm">
+                  <p className="text-xs sm:text-sm font-semibold text-[#666666] mb-2 tracking-wide">Смежные вопросы:</p>
+                  <div className="space-y-2">
                     {followUpQuestions.map((question, index) => (
                       <button
                         key={index}
                         onClick={() => {
                           sendMessage(question);
                         }}
-                        className="w-full text-left px-3 py-2 sm:py-3 bg-background border border-border rounded-md hover:bg-accent text-sm transition-colors text-[#333333] min-h-[44px] flex items-center"
+                        className="w-full text-left px-3 py-3 bg-gray-50 border border-gray-200 rounded-xl hover:bg-gray-100 hover:shadow-md text-sm transition-all text-[#333333] min-h-[48px] flex items-center shadow-sm"
                       >
                         {question}
                       </button>
@@ -275,24 +275,24 @@ export default function MainContentArea({ anonymousLoggedIn, onAnonymousLogin, s
       </div>
       
       <div 
-        className="bg-[#FFD700] p-1 rounded w-full max-w-full overflow-hidden md:p-2" 
+        className="bg-[#FFD700] p-1.5 rounded-xl w-full max-w-full overflow-hidden shadow-md sm:shadow-lg" 
         onClick={() => textareaRef.current?.focus()}
       >
-        <div className="flex w-full max-w-full min-w-0 border-2 border-[#B8860B] rounded-lg overflow-hidden bg-white focus-within:border-2 focus-within:border-[#B8860B] focus-within:outline-none focus-within:ring-0 focus-within:shadow-none flex-nowrap">
+        <div className="flex w-full max-w-full min-w-0 border-2 border-[#B8860B] rounded-xl overflow-hidden bg-white focus-within:border-[#B8860B]/80 focus-within:outline-none focus-within:ring-2 focus-within:ring-[#FFD700]/20 focus-within:shadow-md transition-all flex-nowrap">
           <Textarea
             ref={textareaRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Введите ваш вопрос..."
             onKeyDown={handleKeyDown}
-            className="flex-1 min-w-0 max-w-full w-full text-[14px] sm:text-[16px] border-0 rounded-none px-3 sm:px-4 py-2 sm:py-3 text-[#333333] placeholder:text-[#666666] focus:border-0 focus:ring-0 focus:outline-none focus:shadow-none focus-visible:ring-0 focus-visible:shadow-none resize-none min-h-[40px] sm:min-h-[44px] break-words overflow-wrap-break-word field-sizing-fixed"
+            className="flex-1 min-w-0 max-w-full w-full text-base sm:text-[15px] border-0 rounded-none px-4 py-4 text-[#333333] placeholder:text-[#666666]/80 focus:border-0 focus:ring-0 focus:outline-none focus:shadow-none focus-visible:ring-0 focus-visible:shadow-none resize-none min-h-[48px] break-words overflow-wrap-break-word"
             disabled={isLoading}
             style={{ overflow: 'hidden', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}
           />
           <Button 
             onClick={handleSubmit} 
             disabled={!input.trim() || isLoading} 
-            className="flex-shrink-0 bg-white text-[#000000] hover:bg-gray-100 border-0 rounded-none font-bold px-6 sm:px-8 py-2 sm:py-3 min-w-[80px] sm:min-w-[100px] text-sm sm:text-base focus:outline-none focus:ring-0 focus:border-0 focus:shadow-none focus-visible:ring-0 focus-visible:shadow-none"
+            className="flex-shrink-0 bg-white text-[#000000] hover:bg-gray-50 border-0 rounded-none font-semibold px-5 sm:px-6 py-4 min-w-[80px] text-sm sm:text-base focus:outline-none focus:ring-0 focus:border-0 focus:shadow-none focus-visible:ring-0 focus-visible:shadow-none transition-all shadow-sm hover:shadow-md"
           >
             Найти
           </Button>
