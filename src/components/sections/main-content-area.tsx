@@ -156,7 +156,7 @@ export default function MainContentArea({ anonymousLoggedIn, onAnonymousLogin, s
         
         {/* Input */}
         <div 
-          className="flex gap-2 border-2 border-[#FFD700] bg-[#FFD700] rounded p-3 cursor-text text-white" 
+          className="flex gap-2 border-1 border-[#FFD700] bg-[#FFD700] rounded p-0 cursor-text text-white" 
           onClick={() => inputRef.current?.focus()}
         >
           <Input
@@ -165,13 +165,13 @@ export default function MainContentArea({ anonymousLoggedIn, onAnonymousLogin, s
             onChange={(e) => setInput(e.target.value)}
             placeholder="Введите ваш вопрос..."
             onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-            className="flex-1 text-[14px] bg-white border border-[#DDDDDD] rounded px-3 py-1 text-[#333333] placeholder:text-[#666666] focus:border-[#0066CC] focus:ring-0"
+            className="flex-1 text-[14px] bg-white border border-[#DDDDDD] rounded px-3 py-3 text-[#333333] placeholder:text-[#666666] focus:border-[#0066CC] focus:ring-0"
             disabled={isLoading} 
           />
           <Button 
             onClick={handleSend} 
             disabled={!input.trim() || isLoading} 
-            className="bg-[#0066CC] text-white hover:bg-[#4A90E2] px-4 py-2 rounded border border-[#0066CC] min-w-[40px]"
+            className="bg-[#0066CC] text-white hover:bg-[#4A90E2] px-4 py-3 rounded border border-[#0066CC] min-w-[40px]"
           >
             <Send className="w-4 h-4" />
           </Button>
