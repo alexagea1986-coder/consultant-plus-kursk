@@ -160,7 +160,7 @@ export default function MainContentArea({ anonymousLoggedIn, onAnonymousLogin, s
           className="bg-[#FFD700] p-1 rounded" 
           onClick={() => inputRef.current?.focus()}
         >
-          <div className="flex border-2 border-[#B8860B] rounded-lg overflow-hidden bg-white focus-within:border-2 focus-within:border-[#B8860B] focus-within:outline-none focus-within:ring-0 focus-within:shadow-none">
+          <div className="flex border-2 border-[#B8860B] rounded-lg bg-white focus-within:border-2 focus-within:border-[#B8860B] focus-within:outline-none focus-within:ring-0 focus-within:shadow-none">
             <Input
               ref={inputRef}
               value={input}
@@ -170,10 +170,11 @@ export default function MainContentArea({ anonymousLoggedIn, onAnonymousLogin, s
               className="flex-1 text-[14px] border-0 rounded-none px-4 py-2 text-[#333333] placeholder:text-[#666666] focus:border-0 focus:ring-0 focus:outline-none focus:shadow-none focus-visible:ring-0 focus-visible:shadow-none"
               disabled={isLoading} 
             />
+            <div className="w-2 bg-[#B8860B] self-stretch flex-shrink-0"></div>
             <Button 
               onClick={handleSend} 
               disabled={!input.trim() || isLoading} 
-              className="bg-white text-[#000000] hover:bg-gray-100 border-l-2 border-[#B8860B] border-0 rounded-none font-bold px-8 py-2 min-w-[100px] focus:outline-none focus:ring-0 focus:border-0 focus:shadow-none focus-visible:ring-0 focus-visible:shadow-none"
+              className="bg-white text-[#000000] hover:bg-gray-100 border-0 rounded-none font-bold px-8 py-2 min-w-[100px] focus:outline-none focus:ring-0 focus:border-0 focus:shadow-none focus-visible:ring-0 focus-visible:shadow-none"
             >
               Найти
             </Button>
