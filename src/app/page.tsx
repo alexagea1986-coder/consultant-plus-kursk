@@ -9,8 +9,8 @@ import AdditionalServices from "@/components/sections/additional-services"
 import Footer from "@/components/sections/footer"
 
 export default function Home() {
-  const [anonymousLoggedIn, setAnonymousLoggedIn] = useState(true) // Always anonymous for student clone
-  const [selectedProfile, setSelectedProfile] = useState("universal") // Fixed: Use value instead of label
+  const [anonymousLoggedIn, setAnonymousLoggedIn] = useState(true)
+  const [selectedProfile, setSelectedProfile] = useState("universal")
 
   const handleAnonymousLogin = () => {
     setAnonymousLoggedIn(true)
