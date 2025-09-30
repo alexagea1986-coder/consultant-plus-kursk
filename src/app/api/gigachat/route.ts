@@ -80,7 +80,7 @@ async function ollama_search(query: string, top_k: number = 5): Promise<string> 
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${OLLAMA_KEY}`,
       },
-      body: JSON.stringify({ query, max_results: top_k }),
+      body: JSON.stringify({ query: `${query} site:consultant.ru OR site:pravo.gov.ru OR site:garant.ru OR site:duma.gov.ru OR site:council.gov.ru OR site:government.ru OR site:fns.ru`, max_results: top_k }),
     });
 
     if (!response.ok) {
@@ -90,7 +90,16 @@ async function ollama_search(query: string, top_k: number = 5): Promise<string> 
 
     const data = await response.json();
     const items = data.results || [];
-    return items.map((item: any, i: number) => `[${i+1}] ${item.title}\n${item.text}\n${item.url}`).join('\n\n');
+
+    // Prioritize official Russian sites
+    const officialDomains = ['consultant.ru', 'pravo.gov.ru', 'garant.ru', 'duma.gov.ru', 'council.gov.ru', 'government.ru', 'fns.ru', 'gosuslugi.ru'];
+    const prioritizedItems = items.filter(item => 
+      officialDomains.some(domain => item.url.includes(domain))
+    ).concat(items.filter(item => 
+      !officialDomains.some(domain => item.url.includes(domain))
+    )).slice(0, top_k);
+
+    return prioritizedItems.map((item: any, i: number) => `[${i+1}] ${item.title}\n${item.text}\n${item.url}`).join('\n\n');
   } catch (error) {
     console.error('Ollama search error:', error);
     return '';
@@ -190,7 +199,9 @@ export async function POST(request: NextRequest) {
 ВАЖНО О ДАТЕ АКТУАЛЬНОСТИ:
 Твоя база знаний актуальна на дату твоего обучения. Не указывай конкретные даты актуальности информации в ответах, если не уверен в точности данных на текущую дату. Если пользователь спрашивает о будущих изменениях законодательства, честно сообщай об отсутствии достоверной информации.
 
-Ты не даёшь общих советов — ты даёшь готовое юридически обоснованное решение, как это сделал бы эксперт «КонсультантПлюс».`;
+Ты не даёшь общих советов — ты даёшь готовое юридически обоснованное решение, как это сделал бы эксперт «КонсультантПлюс».
+
+**КРИТИЧНО: Используй предоставленный контекст из интернета для актуализации информации. В ответе обязательно ссылайся на источники из контекста, предпочитая официальные российские сайты (consultant.ru, pravo.gov.ru и т.д.). Добавляй ссылки в формате [1] https://example.com в конце каждого релевантного абзаца или в конце ответа как список источников. Если источник официальный, выдели его жирным шрифтом: **[1] https://consultant.ru/...**`;
 
     // Append search context to system prompt if available
     if (searchContext) {
