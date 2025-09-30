@@ -157,23 +157,23 @@ export default function MainContentArea({ anonymousLoggedIn, onAnonymousLogin, s
         
         {/* Input */}
         <div 
-          className="bg-[#FFD700] p-4 rounded" 
+          className="py-2" 
           onClick={() => inputRef.current?.focus()}
         >
-          <div className="flex bg-white rounded">
+          <div className="flex border-t-4 border-b-4 border-[#FFD700]">
             <Input
               ref={inputRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Введите ваш вопрос..."
               onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-              className="flex-1 text-[14px] bg-white border-0 rounded-l px-4 py-2 text-[#333333] placeholder:text-[#666666] focus:border-0 focus:ring-0"
+              className="flex-1 text-[14px] bg-white border-0 border-l-4 border-[#FFD700] px-4 py-3 text-[#333333] placeholder:text-[#666666] focus:border-0 focus:ring-0"
               disabled={isLoading} 
             />
             <Button 
               onClick={handleSend} 
               disabled={!input.trim() || isLoading} 
-              className="bg-[#FFD700] text-[#333333] hover:bg-[#DAA520] border-0 px-8 py-2 rounded-r font-semibold min-w-[100px] border-l-4 border-[#FFD700]"
+              className="bg-white text-[#333333] hover:bg-[#F5F5F5] border-0 border-r-4 border-[#FFD700] px-8 py-3 font-semibold min-w-[100px]"
             >
               Найти
             </Button>
