@@ -5,6 +5,7 @@ import Header from "@/components/sections/header"
 import MainLayout from "@/components/sections/main-layout"
 import NewsSidebar from "@/components/sections/news-sidebar"
 import MainContentArea from "@/components/sections/main-content-area"
+import AdditionalServices from "@/components/sections/additional-services"
 import Footer from "@/components/sections/footer"
 
 export default function Home() {
@@ -29,13 +30,14 @@ export default function Home() {
             selectedProfile={selectedProfile}
             onProfileChange={setSelectedProfile}
           />}
-          mainContent={
+          aiSearch={
             <MainContentArea 
               anonymousLoggedIn={anonymousLoggedIn}
               onAnonymousLogin={handleAnonymousLogin}
               selectedProfile={selectedProfile}
             />
           }
+          additionalServices={<AdditionalServices />}
         />
       </main>
 
