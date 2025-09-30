@@ -66,7 +66,7 @@ async function getAccessToken(): Promise<string> {
   return tokenData.access_token;
 }
 
-async function ollama_search(query: string, top_k: number = 5): Promise<string> {
+async function ollama_search(query: string, top_k: number = 10): Promise<string> {
   const OLLAMA_KEY = process.env.OLLAMA_KEY;
   if (!OLLAMA_KEY) {
     console.warn('OLLAMA_KEY not set, skipping web search');
@@ -74,6 +74,11 @@ async function ollama_search(query: string, top_k: number = 5): Promise<string> 
   }
 
   try {
+    // More precise query: add current year/month for recency, focus on Russian financial/legal sites
+    const currentDate = new Date();
+    const currentYearMonth = currentDate.toLocaleDateString('ru-RU', { year: 'numeric', month: 'long' });
+    const enhancedQuery = `${query} актуальная на ${currentYearMonth} site:cbr.ru OR site:consultant.ru OR site:garant.ru OR site:pravo.gov.ru OR site:duma.gov.ru OR site:kremlin.ru OR site:government.ru OR site:fns.ru OR site:minfin.ru OR site:rosstat.gov.ru OR site:fas.gov.ru`;
+
     const response = await fetch('https://ollama.com/api/web_search', {
       method: 'POST',
       headers: {
@@ -81,7 +86,7 @@ async function ollama_search(query: string, top_k: number = 5): Promise<string> 
         'Authorization': `Bearer ${OLLAMA_KEY}`,
       },
       body: JSON.stringify({ 
-        query: `${query} site:consultant.ru OR site:pravo.gov.ru OR site:garant.ru OR site:duma.gov.ru OR site:council.gov.ru OR site:government.ru OR site:fns.ru OR site:gosuslugi.ru OR site:cbr.ru`, 
+        query: enhancedQuery, 
         max_results: top_k 
       }),
     });
@@ -94,8 +99,8 @@ async function ollama_search(query: string, top_k: number = 5): Promise<string> 
     const data = await response.json();
     const items = data.results || [];
 
-    // Prioritize official Russian sites
-    const officialDomains = ['consultant.ru', 'pravo.gov.ru', 'garant.ru', 'duma.gov.ru', 'council.gov.ru', 'government.ru', 'fns.ru', 'gosuslugi.ru', 'cbr.ru'];
+    // Prioritize official Russian sites, then others
+    const officialDomains = ['cbr.ru', 'consultant.ru', 'garant.ru', 'pravo.gov.ru', 'duma.gov.ru', 'kremlin.ru', 'government.ru', 'fns.ru', 'minfin.ru', 'rosstat.gov.ru', 'fas.gov.ru'];
     const prioritizedItems = items.filter(item => 
       officialDomains.some(domain => item.url.includes(domain))
     ).concat(items.filter(item => 
@@ -153,10 +158,10 @@ export async function POST(request: NextRequest) {
 • охраны труда и промышленной безопасности,
 • судебной практики (включая позиции ВС РФ, КС РФ, ВАС РФ).
 
-**КРИТИЧНО: В каждом ответе ОБЯЗАТЕЛЬНО анализируй предоставленный веб-контекст, извлекай реальные факты и ссылки. Никогда не выдумывай источники. После каждого ключевого утверждения добавляй inline-ссылку [1], [2] и т.д., ведущую на точные пункты/статьи на официальных сайтах (consultant.ru, pravo.gov.ru, garant.ru, cbr.ru и т.д.). Формат: [1](https://www.consultant.ru/document/cons_doc_LAW_19671/#dst100001) для конкретных локаций. В КОНЦЕ ОТВЕТА ОБЯЗАТЕЛЬНО добавь раздел "Источники:" с нумерованным списком всех использованных ссылок в формате:
+**КРИТИЧНО: ВСЕГДА начинай анализ с предоставленного веб-контекста. Если контекст содержит актуальные данные (например, ставки, решения ЦБ), используй ТОЛЬКО их для фактов — игнорируй свою базу знаний или 'обучение'. Извлекай реальные факты, даты и ссылки. Никогда не используй фразы вроде 'на момент моего обучения' или 'устаревшая информация' — если контекст релевантен, цитируй его inline [1] и в 'Источники'. Если контекст пуст или нерелевантен, укажи: 'Для актуальной информации проверьте официальные источники (cbr.ru, consultant.ru)', но не давай предположений. После каждого ключевого утверждения добавляй inline-ссылку [1], [2] и т.д., ведущую на точные пункты/статьи. Формат: [1](https://www.cbr.ru/press/keypr/) для конкретных локаций. В КОНЦЕ ОТВЕТА ОБЯЗАТЕЛЬНО добавь раздел "Источники:" с нумерованным списком всех использованных ссылок в формате:
 Источники:
 1. [Название/Краткое описание](https://url) - ключевой факт из этого источника.
-Предпочитай официальные российские ресурсы из контекста. Если контекст пуст, укажи, что информация основана на базе знаний, и рекомендовай проверку на официальных сайтах.**
+Предпочитай официальные российские ресурсы из контекста. АКТУАЛИЗИРУЙ информацию по датам из поиска (например, ставки ЦБ на сентябрь 2025).**
 
 ПЕРСОНАЛИЗАЦИЯ ПО ПРОФИЛЮ:
 Текущий профиль пользователя: ${profileLabel}. КРИТИЧНО: Адаптируй ответ ИСКЛЮЧИТЕЛЬНО под этот профиль. Не включай разделы или упоминания для других ролей (бухгалтера, кадровика и т.д.), если профиль не "Универсальный". Фокусируйся только на релевантных аспектах, используя **жирный шрифт** для ключевых норм, рисков и рекомендаций под эту роль.
