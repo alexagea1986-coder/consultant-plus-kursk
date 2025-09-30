@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import Exa from "exa-js";
+import { Exa } from "exa-js";
+import { SberRequest } from "@/lib/utils/sber-chat";
 
 export async function POST(request: NextRequest) {
   try {
