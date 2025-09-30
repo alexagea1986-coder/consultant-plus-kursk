@@ -74,10 +74,10 @@ async function ollama_search(query: string, top_k: number = 10): Promise<string>
   }
 
   try {
-    // More precise query: add current year/month for recency, focus on Russian financial/legal sites
+    // Broader query: search entire internet without site restrictions, focus on recency and Russian terms
     const currentDate = new Date();
     const currentYearMonth = currentDate.toLocaleDateString('ru-RU', { year: 'numeric', month: 'long' });
-    const enhancedQuery = `${query} актуальная на ${currentYearMonth} site:cbr.ru OR site:consultant.ru OR site:garant.ru OR site:pravo.gov.ru OR site:duma.gov.ru OR site:kremlin.ru OR site:government.ru OR site:fns.ru OR site:minfin.ru OR site:rosstat.gov.ru OR site:fas.gov.ru`;
+    const enhancedQuery = `${query} актуальная на ${currentYearMonth} Банк России ключевая ставка 2025`;
 
     const response = await fetch('https://ollama.com/api/web_search', {
       method: 'POST',
@@ -87,7 +87,7 @@ async function ollama_search(query: string, top_k: number = 10): Promise<string>
       },
       body: JSON.stringify({ 
         query: enhancedQuery, 
-        max_results: top_k 
+        max_results: 20  // Increased for more sources
       }),
     });
 
@@ -99,13 +99,13 @@ async function ollama_search(query: string, top_k: number = 10): Promise<string>
     const data = await response.json();
     const items = data.results || [];
 
-    // Prioritize official Russian sites, then others
-    const officialDomains = ['cbr.ru', 'consultant.ru', 'garant.ru', 'pravo.gov.ru', 'duma.gov.ru', 'kremlin.ru', 'government.ru', 'fns.ru', 'minfin.ru', 'rosstat.gov.ru', 'fas.gov.ru'];
+    // Prioritize official Russian sites, but include more diverse sources
+    const officialDomains = ['cbr.ru', 'consultant.ru', 'garant.ru', 'pravo.gov.ru', 'duma.gov.ru', 'kremlin.ru', 'government.ru', 'fns.ru', 'minfin.ru', 'rosstat.gov.ru', 'fas.gov.ru', 'rbc.ru', 'vedomosti.ru', 'kommersant.ru', 'tass.ru'];
     const prioritizedItems = items.filter(item => 
       officialDomains.some(domain => item.url.includes(domain))
     ).concat(items.filter(item => 
       !officialDomains.some(domain => item.url.includes(domain))
-    )).slice(0, top_k);
+    )).slice(0, top_k * 2);  // Fetch more but slice to top_k in context
 
     return prioritizedItems.map((item: any, i: number) => `[${i+1}] ${item.title}\n${item.text}\n${item.url}`).join('\n\n');
   } catch (error) {
