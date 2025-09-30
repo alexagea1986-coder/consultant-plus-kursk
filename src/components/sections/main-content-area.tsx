@@ -173,7 +173,7 @@ export default function MainContentArea({ anonymousLoggedIn, onAnonymousLogin, s
             <Button 
               onClick={handleSend} 
               disabled={!input.trim() || isLoading} 
-              className="bg-white text-[#000000] hover:bg-gray-100 border-0 rounded-none font-bold px-8 py-2 min-w-[100px] focus:outline-none focus:ring-0 focus:border-0 focus:shadow-none focus-visible:ring-0 focus-visible:shadow-none"
+              className="bg-white text-[#000000] hover:bg-gray-100 border-l-2 border-[#B8860B] border-0 rounded-none font-bold px-8 py-2 min-w-[100px] focus:outline-none focus:ring-0 focus:border-0 focus:shadow-none focus-visible:ring-0 focus-visible:shadow-none"
             >
               Найти
             </Button>
