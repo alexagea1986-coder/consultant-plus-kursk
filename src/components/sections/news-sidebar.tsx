@@ -80,7 +80,7 @@ export default function NewsSidebar({ anonymousLoggedIn, selectedProfile }: News
         </div>
         <div className="space-y-1">
           {[...Array(5)].map((_, i) => (
-            <div key={i} className="p-1 bg-white rounded border animate-pulse border-[#DAA520]">
+            <div key={i} className="p-1 bg-white rounded animate-pulse">
               <div className="flex items-center mb-1">
                 <div className="w-4 h-4 bg-gray-300 rounded mr-2"></div>
                 <div className="h-3 bg-gray-300 rounded w-20"></div>
@@ -113,7 +113,7 @@ export default function NewsSidebar({ anonymousLoggedIn, selectedProfile }: News
           <a
             key={index}
             href={item.link}
-            className="block p-2 bg-white rounded border border-[#DAA520] hover:bg-[#F8F9FA] transition-colors no-underline"
+            className="block p-2 bg-white rounded hover:bg-[#F8F9FA] transition-colors no-underline"
             target="_blank"
             rel="noopener noreferrer"
           >
