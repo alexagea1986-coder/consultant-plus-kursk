@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
+import fetch from "node-fetch";
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,8 +19,28 @@ export async function POST(request: NextRequest) {
 
     const clientSecretKey = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
 
-    // Mock token response to bypass fetch failure
-    const accessToken = "mock_token_for_testing";
+    // Real token acquisition per docs
+    const tokenBody = new URLSearchParams({ 
+      scope: 'GIGACHAT_API_PERS'
+    });
+    const tokenResponse = await fetch("https://ngw.devices.sberbank.ru:9443/api/v2/oauth", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Accept": "application/json",
+        "Authorization": `Basic ${clientSecretKey}`,
+        "RqUID": randomUUID(),
+      },
+      body: tokenBody.toString(),
+    });
+
+    if (!tokenResponse.ok) {
+      const errorText = await tokenResponse.text();
+      throw new Error(`Token error: ${tokenResponse.status} - ${errorText}`);
+    }
+
+    const tokenData = await tokenResponse.json();
+    const accessToken = tokenData.access_token;
 
     // System prompt based on profile
     const systemPrompt = `Ты эксперт в области ${selectedProfile}. Отвечай на вопросы пользователя на русском языке, предоставляя точную и полезную информацию. Если возможно, добавь в конце ответа раздел "Уточняющие вопросы" с 2-3 возможными следующими вопросами, нумерованными.`;
@@ -29,23 +50,36 @@ export async function POST(request: NextRequest) {
       ...messages.map((msg: any) => ({ role: msg.role, content: msg.content })),
     ];
 
-    // Mock chat completion to bypass fetch failure
-    const userQuery = formattedMessages[formattedMessages.length - 1].content.toLowerCase();
-    let mockContent = "Извините, реальный API недоступен в текущей среде. Это демонстрационный ответ.\n\nОбычно здесь был бы полный ответ на основе GigaChat.\n\nУточняющие вопросы:\n1. Что вы имеете в виду под этим?\n2. Можете привести пример?\n3. Нужно больше деталей?";
+    // Real chat completion with updated model
+    const chatResponse = await fetch("https://gigachat.devices.sberbank.ru/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+        "RqUID": randomUUID(),
+      },
+      body: JSON.stringify({
+        model: "GigaChat-2",
+        messages: formattedMessages,
+        stream: false,
+        temperature: 0.7,
+      }),
+    });
 
-    // Simple mock based on profile and query for better demo
-    if (selectedProfile.includes("бухгалтерия") && userQuery.includes("налог")) {
-      mockContent = "В контексте бухгалтерии, налог на прибыль рассчитывается по ставке 20% от прибыли. Учитывайте вычеты и льготы согласно НК РФ.\n\nУточняющие вопросы:\n1. Какой тип налога вас интересует?\n2. Для какой формы бизнеса?\n3. Нужны примеры расчетов?";
-    } else if (selectedProfile === "universal" && userQuery.includes("ии")) {
-      mockContent = "Искусственный интеллект (ИИ) — это область информатики, изучающая создание систем, способных выполнять задачи, требующие человеческого интеллекта, такие как распознавание речи или принятие решений.\n\nУточняющие вопросы:\n1. Что именно о ИИ вас интересует?\n2. Примеры применения?\n3. Этические аспекты?";
+    if (!chatResponse.ok) {
+      const errorText = await chatResponse.text();
+      throw new Error(`Chat error: ${chatResponse.status} - ${errorText}`);
     }
 
-    return NextResponse.json({ content: mockContent });
+    const chatData = await chatResponse.json();
+    const content = chatData.choices[0]?.message?.content || "Нет ответа от модели.";
+
+    return NextResponse.json({ content });
   } catch (error: any) {
     console.error("GigaChat error:", error);
+    // Keep fallback for env issues
     return NextResponse.json({
       content: "Извините, произошла ошибка при обращении к модели. Попробуйте позже.",
-      error: error.message || JSON.stringify(error),
     }, { status: 500 });
   }
 }
