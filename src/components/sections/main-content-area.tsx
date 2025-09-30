@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { BookOpen, MessageCircle, Send, Trash2, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 interface MainContentAreaProps {
   anonymousLoggedIn: boolean;
@@ -17,7 +18,8 @@ interface Message {
 }
 
 export default function MainContentArea({ anonymousLoggedIn, onAnonymousLogin, selectedProfile }: MainContentAreaProps) {
-  const inputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   if (!anonymousLoggedIn) {
@@ -76,6 +78,11 @@ export default function MainContentArea({ anonymousLoggedIn, onAnonymousLogin, s
     setInput('');
     setIsLoading(true);
 
+    // Reset textarea height
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+    }
+
     try {
       const response = await fetch('/api/gigachat', {
         method: 'POST',
@@ -105,6 +112,24 @@ export default function MainContentArea({ anonymousLoggedIn, onAnonymousLogin, s
     }
   };
 
+  // Auto-resize textarea
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.style.height = 'auto';
+      const maxHeight = 120; // Max height in px, approx 5-6 lines
+      const scrollHeight = textarea.scrollHeight;
+      textarea.style.height = Math.min(scrollHeight, maxHeight) + 'px';
+    }
+  }, [input]);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
   return (
     <div className="flex flex-col h-full space-y-4">
       {/* Gigachat section */}
@@ -118,10 +143,10 @@ export default function MainContentArea({ anonymousLoggedIn, onAnonymousLogin, s
             variant="ghost" 
             size="sm" 
             onClick={handleClear} 
-            className="text-[#666666] hover:text-[#333333] h-6 px-2"
+            className="text-[#666666] hover:text-[#333333] flex items-center gap-1 h-6 px-2 text-xs"
           >
             <Trash2 className="w-4 h-4" />
-            <span className="ml-1 text-[12px]">Очистить</span>
+            <span className="text-[12px]">Очистить</span>
           </Button>
         </div>
         
@@ -158,17 +183,18 @@ export default function MainContentArea({ anonymousLoggedIn, onAnonymousLogin, s
         {/* Input */}
         <div 
           className="bg-[#FFD700] p-1 rounded" 
-          onClick={() => inputRef.current?.focus()}
+          onClick={() => textareaRef.current?.focus()}
         >
           <div className="flex border-2 border-[#B8860B] rounded-lg overflow-hidden bg-white focus-within:border-2 focus-within:border-[#B8860B] focus-within:outline-none focus-within:ring-0 focus-within:shadow-none">
-            <Input
-              ref={inputRef}
+            <Textarea
+              ref={textareaRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Введите ваш вопрос..."
-              onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-              className="flex-1 text-[14px] border-0 rounded-none px-4 py-2 text-[#333333] placeholder:text-[#666666] focus:border-0 focus:ring-0 focus:outline-none focus:shadow-none focus-visible:ring-0 focus-visible:shadow-none"
-              disabled={isLoading} 
+              onKeyDown={handleKeyDown}
+              className="flex-1 text-[14px] border-0 rounded-none px-4 py-2 text-[#333333] placeholder:text-[#666666] focus:border-0 focus:ring-0 focus:outline-none focus:shadow-none focus-visible:ring-0 focus-visible:shadow-none resize-none min-h-[40px]"
+              disabled={isLoading}
+              style={{ overflow: 'hidden' }}
             />
             <Button 
               onClick={handleSend} 
