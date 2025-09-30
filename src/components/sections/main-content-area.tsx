@@ -76,6 +76,63 @@ export default function MainContentArea({ anonymousLoggedIn, onAnonymousLogin, s
     localStorage.removeItem('chatHistory');
   };
 
+  const parseFollowUpQuestions = (content: string): { mainContent: string; followUps: string[] } => {
+    const lines = content.split('\n');
+    
+    let questionStartIndex = -1;
+    for (let i = 0; i < lines.length; i++) {
+      const lowerLine = lines[i].toLowerCase();
+      if (lowerLine.includes('уточняющие вопросы') || lowerLine.includes('смежные вопросы') || lowerLine.includes('возможные уточняющие вопросы')) {
+        questionStartIndex = i;
+        break;
+      }
+    }
+
+    let mainContentLines: string[];
+    let startIndexForQuestions: number;
+
+    if (questionStartIndex === -1) {
+      return { mainContent: content, followUps: [] };
+    } else if (questionStartIndex === 0) {
+      mainContentLines = [lines[0]];  // Include header in main content
+      startIndexForQuestions = 1;
+    } else {
+      mainContentLines = lines.slice(0, questionStartIndex);
+      startIndexForQuestions = questionStartIndex + 1;
+    }
+
+    const followUps: string[] = [];
+    for (let i = startIndexForQuestions; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
+      
+      // Stop conditions
+      if (line.toLowerCase().includes('см. также') || line.toLowerCase().includes('see also') || 
+          line.includes('end') || line.startsWith('---') || line.startsWith('=')) {
+        // Optionally add this line to mainContent if it's "См. также"
+        if (line.toLowerCase().includes('см. также') || line.toLowerCase().includes('see also')) {
+          mainContentLines.push(lines[i]);
+        }
+        break;
+      }
+      
+      // Add if it's likely a question
+      if (line.endsWith('?') && line.length > 10) {
+        const cleanQuestion = line.replace(/^\s*[-•*+\d\.\)\[]+\s*/g, '').trim();
+        if (cleanQuestion.endsWith('?') && cleanQuestion.length > 5) {
+          followUps.push(cleanQuestion);
+        }
+      } else if (followUps.length > 0) {
+        // Stop if a non-question after questions started
+        break;
+      }
+    }
+
+    const mainContent = mainContentLines.join('\n').trim();
+
+    return { mainContent, followUps };
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim()) return;
@@ -97,15 +154,7 @@ export default function MainContentArea({ anonymousLoggedIn, onAnonymousLogin, s
 
       const { content } = await response.json();
 
-      // Parse follow-up questions from the end of the response
-      const lines = content.split('\n');
-      const questionStartIndex = lines.findIndex(line => line.startsWith('Возможные уточняющие вопросы:') || line.startsWith('Уточняющие вопросы:'));
-      let newFollowUps: string[] = [];
-      let mainContent = content;
-      if (questionStartIndex !== -1) {
-        newFollowUps = lines.slice(questionStartIndex + 1).filter(line => line.trim() && !line.startsWith('---')).map(line => line.replace(/^\d+\.\s*/g, '').trim());
-        mainContent = lines.slice(0, questionStartIndex).join('\n').trim();
-      }
+      const { mainContent, followUps: newFollowUps } = parseFollowUpQuestions(content);
 
       setMessages([...newMessages, { role: 'assistant', content: mainContent }]);
       setFollowUpQuestions(newFollowUps);
