@@ -127,19 +127,21 @@ export default function NewsSidebar({ anonymousLoggedIn, selectedProfile: propSe
 
   return (
     <div className="bg-[#F5F5F5] rounded-md p-1 space-y-1 h-full flex flex-col">
-      <div className="flex items-center mb-2">
-        <span className="text-[14px] font-medium text-[#333333] mr-2">Профиль</span>
-        <select 
-          value={selectedProfile} 
-          onChange={(e) => setSelectedProfile(e.target.value)}
-          className="text-[12px] text-[#666666] border border-[#DDDDDD] rounded px-2 py-1 bg-white"
-        >
-          {profiles.map((profile) => (
-            <option key={profile.value} value={profile.value}>
-              {profile.label}
-            </option>
-          ))}
-        </select>
+      <div className="bg-white rounded border border-[#DDDDDD] p-2 mb-2">
+        <div className="flex items-center">
+          <span className="text-[14px] font-bold text-[#333333] mr-2">Профиль</span>
+          <select 
+            value={selectedProfile} 
+            onChange={(e) => setSelectedProfile(e.target.value)}
+            className="text-[12px] text-[#666666] border border-[#DDDDDD] rounded px-2 py-1 bg-white"
+          >
+            {profiles.map((profile) => (
+              <option key={profile.value} value={profile.value}>
+                {profile.label}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center">
@@ -148,7 +150,7 @@ export default function NewsSidebar({ anonymousLoggedIn, selectedProfile: propSe
         </div>
       </div>
 
-      <div className="space-y-1">
+      <div className="space-y-1 flex-1">
         {filteredNews.slice(0, 5).map((item, index) => (
           <a
             key={index}
