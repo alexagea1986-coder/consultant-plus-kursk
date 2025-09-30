@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Exa } from "@exalabs/exa-js";
+import Exa from "exa-js";
 
 export async function POST(request: NextRequest) {
   try {
@@ -9,6 +9,7 @@ export async function POST(request: NextRequest) {
     const needsSearch = /today|current|recent|2025|update|news/i.test(message);
     
     let context = "";
+    let messageWithContext;
     if (needsSearch) {
       const exa = new Exa(process.env.EXA_API_KEY!);
       const searchResults = await exa.search(message, {
