@@ -111,7 +111,7 @@ export default function MainContentArea({ anonymousLoggedIn, onAnonymousLogin, s
       <div className="flex-1 flex flex-col bg-white rounded-lg border border-[#DDDDDD] shadow-sm px-6 pt-2">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-[18px] font-semibold text-[#333333] flex items-center">
-            <Search className="w-5 h-5 mr-2" stroke="#FFD700" strokeWidth={2} />
+            <Search className="w-5 h-5 mr-2 scale-x-[-1] stroke-[#FFD700]" strokeWidth={2} />
             Быстрый ai поиск
           </h2>
           <Button 
