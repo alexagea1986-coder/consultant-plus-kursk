@@ -74,44 +74,131 @@ async function exa_search(query: string, top_k: number = 10): Promise<string> {
   }
 
   try {
-    // Search across the entire web without domain restrictions
-    const currentDate = new Date();
-    const currentYearMonth = currentDate.toLocaleDateString('ru-RU', { year: 'numeric', month: 'long' });
-    const enhancedQuery = `${query} актуальная информация ${currentYearMonth} 2025`;
+    // Expanded priority domains based on what Yandex finds
+    const priorityDomains = [
+      'cbr.ru',
+      'banki.ru',
+      'domclick.ru',
+      'rbc.ru',
+      'ria.ru',
+      'tass.ru',
+      'interfax.ru',
+      'kommersant.ru',
+      'vedomosti.ru',
+      'lenta.ru',
+      'gazeta.ru'
+    ];
 
-    const response = await fetch('https://api.exa.ai/search', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': EXA_API_KEY,
-      },
-      body: JSON.stringify({ 
-        query: enhancedQuery, 
-        numResults: 50,  // Get many results for comprehensive coverage
-        useAutoprompt: true,
-        type: 'auto',  // Auto-detect best search type
-        text: true,  // Get text content
-        highlights: true  // Get highlights
-      }),
-    });
+    // More specific search queries for current rate
+    const searchQueries = [
+      `ключевая ставка 17% сентябрь 2025`,
+      `ключевая ставка 17 процентов сентябрь 2025`,
+      `ключевая ставка ЦБ 15 сентября 2025`,
+      `ключевая ставка Банка России 17%`,
+      `решение ЦБ ключевая ставка сентябрь 2025`,
+      `ЦБ повысил ключевую ставку 17%`,
+      `${query}`,
+      `${query} октябрь 2025`,
+      `${query} сентябрь 2025`
+    ];
 
-    if (!response.ok) {
-      console.error('Exa search failed:', response.status);
-      return '';
+    // Remove date filter - search all available content
+    const allResults: any[] = [];
+
+    // Search on each priority domain
+    for (const domain of priorityDomains) {
+      for (const searchQuery of searchQueries) {
+        try {
+          const response = await fetch('https://api.exa.ai/search', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-api-key': EXA_API_KEY,
+            },
+            body: JSON.stringify({ 
+              query: searchQuery,
+              includeDomains: [domain],
+              numResults: 10,
+              useAutoprompt: true,
+              type: 'auto',
+              text: true,
+              highlights: true
+            }),
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            if (data.results && data.results.length > 0) {
+              allResults.push(...data.results);
+            }
+          }
+        } catch (error) {
+          // Continue with other searches
+        }
+      }
     }
 
-    const data = await response.json();
-    const results = data.results || [];
+    // General web search without domain restrictions
+    for (const searchQuery of searchQueries) {
+      try {
+        const response = await fetch('https://api.exa.ai/search', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': EXA_API_KEY,
+          },
+          body: JSON.stringify({ 
+            query: searchQuery, 
+            numResults: 30,
+            useAutoprompt: true,
+            type: 'auto',
+            text: true,
+            highlights: true
+          }),
+        });
 
-    if (results.length === 0) {
+        if (response.ok) {
+          const data = await response.json();
+          if (data.results) {
+            allResults.push(...data.results);
+          }
+        }
+      } catch (error) {
+        // Continue
+      }
+    }
+
+    if (allResults.length === 0) {
       console.warn('No Exa search results found');
       return '';
     }
 
-    // Return ALL results without filtering
-    return results.map((res: any, i: number) => {
+    // Deduplicate by URL
+    const seenUrls = new Set<string>();
+    const uniqueResults = [];
+    for (const result of allResults) {
+      if (!seenUrls.has(result.url)) {
+        seenUrls.add(result.url);
+        uniqueResults.push(result);
+      }
+    }
+
+    // Sort by published date (newest first) if available
+    uniqueResults.sort((a, b) => {
+      const dateA = a.publishedDate ? new Date(a.publishedDate).getTime() : 0;
+      const dateB = b.publishedDate ? new Date(b.publishedDate).getTime() : 0;
+      return dateB - dateA;
+    });
+
+    // Return top results
+    return uniqueResults.slice(0, 50).map((res: any, i: number) => {
       const highlights = res.highlights?.length > 0 ? res.highlights.join(' ') : res.text || '';
-      return `[${i+1}] ${res.title}\nURL: ${res.url}\nДата публикации: ${res.publishedDate || 'Не указана'}\nСодержание: ${highlights}`;
+      const pubDate = res.publishedDate ? new Date(res.publishedDate).toLocaleDateString('ru-RU', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      }) : 'Не указана';
+      return `[${i+1}] ${res.title}\nURL: ${res.url}\nДата публикации: ${pubDate}\nСодержание: ${highlights}`;
     }).join('\n\n---\n');
   } catch (error) {
     console.error('Exa search error:', error);
