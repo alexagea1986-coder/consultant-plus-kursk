@@ -66,50 +66,55 @@ async function getAccessToken(): Promise<string> {
   return tokenData.access_token;
 }
 
-async function ollama_search(query: string, top_k: number = 10): Promise<string> {
-  const OLLAMA_KEY = process.env.OLLAMA_KEY;
-  if (!OLLAMA_KEY) {
-    console.warn('OLLAMA_KEY not set, skipping web search');
+async function exa_search(query: string, top_k: number = 10): Promise<string> {
+  const EXA_API_KEY = process.env.EXA_API_KEY;
+  if (!EXA_API_KEY) {
+    console.warn('EXA_API_KEY not set, skipping web search');
     return '';
   }
 
   try {
-    // Broader query: search entire internet without site restrictions, focus on recency and Russian terms
+    // Search across the entire web without domain restrictions
     const currentDate = new Date();
     const currentYearMonth = currentDate.toLocaleDateString('ru-RU', { year: 'numeric', month: 'long' });
-    const enhancedQuery = `${query} актуальная на ${currentYearMonth} Банк России ключевая ставка 2025`;
+    const enhancedQuery = `${query} актуальная информация ${currentYearMonth} 2025`;
 
-    const response = await fetch('https://ollama.com/api/web_search', {
+    const response = await fetch('https://api.exa.ai/search', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${OLLAMA_KEY}`,
+        'x-api-key': EXA_API_KEY,
       },
       body: JSON.stringify({ 
         query: enhancedQuery, 
-        max_results: 20  // Increased for more sources
+        numResults: 50,  // Get many results for comprehensive coverage
+        useAutoprompt: true,
+        type: 'auto',  // Auto-detect best search type
+        text: true,  // Get text content
+        highlights: true  // Get highlights
       }),
     });
 
     if (!response.ok) {
-      console.error('Ollama search failed:', response.status);
+      console.error('Exa search failed:', response.status);
       return '';
     }
 
     const data = await response.json();
-    const items = data.results || [];
+    const results = data.results || [];
 
-    // Prioritize official Russian sites, but include more diverse sources
-    const officialDomains = ['cbr.ru', 'consultant.ru', 'garant.ru', 'pravo.gov.ru', 'duma.gov.ru', 'kremlin.ru', 'government.ru', 'fns.ru', 'minfin.ru', 'rosstat.gov.ru', 'fas.gov.ru', 'rbc.ru', 'vedomosti.ru', 'kommersant.ru', 'tass.ru'];
-    const prioritizedItems = items.filter(item => 
-      officialDomains.some(domain => item.url.includes(domain))
-    ).concat(items.filter(item => 
-      !officialDomains.some(domain => item.url.includes(domain))
-    )).slice(0, top_k * 2);  // Fetch more but slice to top_k in context
+    if (results.length === 0) {
+      console.warn('No Exa search results found');
+      return '';
+    }
 
-    return prioritizedItems.map((item: any, i: number) => `[${i+1}] ${item.title}\n${item.text}\n${item.url}`).join('\n\n');
+    // Return ALL results without filtering
+    return results.map((res: any, i: number) => {
+      const highlights = res.highlights?.length > 0 ? res.highlights.join(' ') : res.text || '';
+      return `[${i+1}] ${res.title}\nURL: ${res.url}\nДата публикации: ${res.publishedDate || 'Не указана'}\nСодержание: ${highlights}`;
+    }).join('\n\n---\n');
   } catch (error) {
-    console.error('Ollama search error:', error);
+    console.error('Exa search error:', error);
     return '';
   }
 }
@@ -132,7 +137,7 @@ export async function POST(request: NextRequest) {
 
     // Extract the last user message as search query
     const lastUserMessage = messagesList[messagesList.length - 1]?.content || '';
-    const searchContext = await ollama_search(lastUserMessage);
+    const searchContext = await exa_search(lastUserMessage);
 
     // Map English profile value to Russian label
     const profileMap: { [key: string]: string } = {
