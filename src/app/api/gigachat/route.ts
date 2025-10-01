@@ -74,40 +74,20 @@ async function exa_search(query: string, top_k: number = 10): Promise<string> {
   }
 
   try {
-    // Expanded priority domains based on what Yandex finds
-    const priorityDomains = [
-      'cbr.ru',
-      'banki.ru',
-      'domclick.ru',
-      'rbc.ru',
-      'ria.ru',
-      'tass.ru',
-      'interfax.ru',
-      'kommersant.ru',
-      'vedomosti.ru',
-      'lenta.ru',
-      'gazeta.ru'
-    ];
-
-    // More specific search queries for current rate
-    const searchQueries = [
-      `ключевая ставка 17% сентябрь 2025`,
-      `ключевая ставка 17 процентов сентябрь 2025`,
-      `ключевая ставка ЦБ 15 сентября 2025`,
-      `ключевая ставка Банка России 17%`,
-      `решение ЦБ ключевая ставка сентябрь 2025`,
-      `ЦБ повысил ключевую ставку 17%`,
-      `${query}`,
-      `${query} октябрь 2025`,
-      `${query} сентябрь 2025`
-    ];
-
-    // Remove date filter - search all available content
     const allResults: any[] = [];
 
-    // Search on each priority domain
-    for (const domain of priorityDomains) {
-      for (const searchQuery of searchQueries) {
+    // Strategy 1: Direct search with specific domains and exact keywords
+    const targetDomains = ['banki.ru', 'domclick.ru', 'cbr.ru', 'rbc.ru', 'interfax.ru', 'tass.ru'];
+    const specificQueries = [
+      'ключевая ставка 17 процентов сентябрь 2025',
+      'ключевая ставка ЦБ 17% 15 сентября',
+      'Банк России повысил ставку до 17%',
+      'решение ЦБ 15 сентября 2025 ключевая ставка'
+    ];
+
+    // Search with domain restrictions
+    for (const domain of targetDomains) {
+      for (const q of specificQueries) {
         try {
           const response = await fetch('https://api.exa.ai/search', {
             method: 'POST',
@@ -115,31 +95,35 @@ async function exa_search(query: string, top_k: number = 10): Promise<string> {
               'Content-Type': 'application/json',
               'x-api-key': EXA_API_KEY,
             },
-            body: JSON.stringify({ 
-              query: searchQuery,
+            body: JSON.stringify({
+              query: q,
               includeDomains: [domain],
-              numResults: 10,
-              useAutoprompt: true,
-              type: 'auto',
-              text: true,
-              highlights: true
+              numResults: 5,
+              useAutoprompt: false,
+              type: 'keyword',
+              text: { maxCharacters: 3000 },
+              highlights: { numSentences: 5, highlightsPerUrl: 5 }
             }),
           });
 
           if (response.ok) {
             const data = await response.json();
-            if (data.results && data.results.length > 0) {
-              allResults.push(...data.results);
-            }
+            if (data.results) allResults.push(...data.results);
           }
-        } catch (error) {
-          // Continue with other searches
+        } catch (e) {
+          // Continue
         }
       }
     }
 
-    // General web search without domain restrictions
-    for (const searchQuery of searchQueries) {
+    // Strategy 2: General web search without restrictions
+    const generalQueries = [
+      'текущая ключевая ставка ЦБ РФ октябрь 2025',
+      'последнее решение Банка России по ключевой ставке 2025',
+      query
+    ];
+
+    for (const q of generalQueries) {
       try {
         const response = await fetch('https://api.exa.ai/search', {
           method: 'POST',
@@ -147,23 +131,21 @@ async function exa_search(query: string, top_k: number = 10): Promise<string> {
             'Content-Type': 'application/json',
             'x-api-key': EXA_API_KEY,
           },
-          body: JSON.stringify({ 
-            query: searchQuery, 
-            numResults: 30,
+          body: JSON.stringify({
+            query: q,
+            numResults: 20,
             useAutoprompt: true,
-            type: 'auto',
-            text: true,
-            highlights: true
+            type: 'neural',
+            text: { maxCharacters: 3000 },
+            highlights: { numSentences: 5, highlightsPerUrl: 5 }
           }),
         });
 
         if (response.ok) {
           const data = await response.json();
-          if (data.results) {
-            allResults.push(...data.results);
-          }
+          if (data.results) allResults.push(...data.results);
         }
-      } catch (error) {
+      } catch (e) {
         // Continue
       }
     }
@@ -173,7 +155,7 @@ async function exa_search(query: string, top_k: number = 10): Promise<string> {
       return '';
     }
 
-    // Deduplicate by URL
+    // Deduplicate and prioritize by recency
     const seenUrls = new Set<string>();
     const uniqueResults = [];
     for (const result of allResults) {
@@ -183,23 +165,25 @@ async function exa_search(query: string, top_k: number = 10): Promise<string> {
       }
     }
 
-    // Sort by published date (newest first) if available
+    // Sort by published date (newest first)
     uniqueResults.sort((a, b) => {
       const dateA = a.publishedDate ? new Date(a.publishedDate).getTime() : 0;
       const dateB = b.publishedDate ? new Date(b.publishedDate).getTime() : 0;
       return dateB - dateA;
     });
 
-    // Return top results
-    return uniqueResults.slice(0, 50).map((res: any, i: number) => {
-      const highlights = res.highlights?.length > 0 ? res.highlights.join(' ') : res.text || '';
-      const pubDate = res.publishedDate ? new Date(res.publishedDate).toLocaleDateString('ru-RU', { 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
+    // Format results with maximum context
+    return uniqueResults.slice(0, 40).map((res: any, i: number) => {
+      const text = res.text || '';
+      const highlights = res.highlights?.length > 0 ? res.highlights.join(' ... ') : '';
+      const content = highlights || text.slice(0, 2000);
+      const pubDate = res.publishedDate ? new Date(res.publishedDate).toLocaleDateString('ru-RU', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
       }) : 'Не указана';
-      return `[${i+1}] ${res.title}\nURL: ${res.url}\nДата публикации: ${pubDate}\nСодержание: ${highlights}`;
-    }).join('\n\n---\n');
+      return `[${i+1}] ${res.title}\nURL: ${res.url}\nДата публикации: ${pubDate}\nКонтент: ${content}`;
+    }).join('\n\n---\n\n');
   } catch (error) {
     console.error('Exa search error:', error);
     return '';
