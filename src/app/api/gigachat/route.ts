@@ -75,79 +75,101 @@ async function exa_search(query: string, top_k: number = 10): Promise<string> {
 
   try {
     const allResults: any[] = [];
+    const currentDate = new Date().toLocaleDateString('ru-RU', { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
 
-    // Strategy 1: Direct search with specific domains and exact keywords
-    const targetDomains = ['banki.ru', 'domclick.ru', 'cbr.ru', 'rbc.ru', 'interfax.ru', 'tass.ru'];
-    const specificQueries = [
-      'ключевая ставка 17 процентов сентябрь 2025',
-      'ключевая ставка ЦБ 17% 15 сентября',
-      'Банк России повысил ставку до 17%',
-      'решение ЦБ 15 сентября 2025 ключевая ставка'
+    // Priority domains for Russian legal/financial information
+    const priorityDomains = [
+      'consultant.ru', 'garant.ru', 'pravo.gov.ru',
+      'cbr.ru', 'nalog.gov.ru', 'pfr.gov.ru',
+      'minfin.gov.ru', 'ach.gov.ru', 'rosmintrud.ru',
+      'rbc.ru', 'interfax.ru', 'tass.ru', 'ria.ru',
+      'banki.ru', 'domclick.ru', 'kommersant.ru'
     ];
 
-    // Search with domain restrictions
-    for (const domain of targetDomains) {
-      for (const q of specificQueries) {
-        try {
-          const response = await fetch('https://api.exa.ai/search', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'x-api-key': EXA_API_KEY,
-            },
-            body: JSON.stringify({
-              query: q,
-              includeDomains: [domain],
-              numResults: 5,
-              useAutoprompt: false,
-              type: 'keyword',
-              text: { maxCharacters: 3000 },
-              highlights: { numSentences: 5, highlightsPerUrl: 5 }
-            }),
-          });
+    // Strategy 1: Keyword search on official domains with date context
+    const dateEnhancedQuery = `${query} ${currentDate.split(' ')[1]} ${currentDate.split(' ')[2]}`;
+    
+    try {
+      const response = await fetch('https://api.exa.ai/search', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': EXA_API_KEY,
+        },
+        body: JSON.stringify({
+          query: dateEnhancedQuery,
+          includeDomains: priorityDomains,
+          numResults: 15,
+          useAutoprompt: false,
+          type: 'keyword',
+          text: { maxCharacters: 3000 },
+          highlights: { numSentences: 5, highlightsPerUrl: 5 }
+        }),
+      });
 
-          if (response.ok) {
-            const data = await response.json();
-            if (data.results) allResults.push(...data.results);
-          }
-        } catch (e) {
-          // Continue
-        }
+      if (response.ok) {
+        const data = await response.json();
+        if (data.results) allResults.push(...data.results);
       }
+    } catch (e) {
+      console.error('Keyword search error:', e);
     }
 
-    // Strategy 2: General web search without restrictions
-    const generalQueries = [
-      'текущая ключевая ставка ЦБ РФ октябрь 2025',
-      'последнее решение Банка России по ключевой ставке 2025',
-      query
-    ];
+    // Strategy 2: Neural search for semantic understanding
+    try {
+      const response = await fetch('https://api.exa.ai/search', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': EXA_API_KEY,
+        },
+        body: JSON.stringify({
+          query: query,
+          includeDomains: priorityDomains,
+          numResults: 15,
+          useAutoprompt: true,
+          type: 'neural',
+          text: { maxCharacters: 3000 },
+          highlights: { numSentences: 5, highlightsPerUrl: 5 }
+        }),
+      });
 
-    for (const q of generalQueries) {
-      try {
-        const response = await fetch('https://api.exa.ai/search', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-api-key': EXA_API_KEY,
-          },
-          body: JSON.stringify({
-            query: q,
-            numResults: 20,
-            useAutoprompt: true,
-            type: 'neural',
-            text: { maxCharacters: 3000 },
-            highlights: { numSentences: 5, highlightsPerUrl: 5 }
-          }),
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          if (data.results) allResults.push(...data.results);
-        }
-      } catch (e) {
-        // Continue
+      if (response.ok) {
+        const data = await response.json();
+        if (data.results) allResults.push(...data.results);
       }
+    } catch (e) {
+      console.error('Neural search error:', e);
+    }
+
+    // Strategy 3: Broader web search without domain restrictions
+    try {
+      const response = await fetch('https://api.exa.ai/search', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': EXA_API_KEY,
+        },
+        body: JSON.stringify({
+          query: `${query} актуальная информация ${currentDate.split(' ')[2]}`,
+          numResults: 20,
+          useAutoprompt: true,
+          type: 'auto',
+          text: { maxCharacters: 3000 },
+          highlights: { numSentences: 5, highlightsPerUrl: 5 }
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.results) allResults.push(...data.results);
+      }
+    } catch (e) {
+      console.error('Broad search error:', e);
     }
 
     if (allResults.length === 0) {
@@ -155,7 +177,7 @@ async function exa_search(query: string, top_k: number = 10): Promise<string> {
       return '';
     }
 
-    // Deduplicate and prioritize by recency
+    // Deduplicate by URL
     const seenUrls = new Set<string>();
     const uniqueResults = [];
     for (const result of allResults) {
@@ -165,7 +187,7 @@ async function exa_search(query: string, top_k: number = 10): Promise<string> {
       }
     }
 
-    // Sort by published date (newest first)
+    // Sort by relevance and recency
     uniqueResults.sort((a, b) => {
       const dateA = a.publishedDate ? new Date(a.publishedDate).getTime() : 0;
       const dateB = b.publishedDate ? new Date(b.publishedDate).getTime() : 0;
@@ -173,7 +195,7 @@ async function exa_search(query: string, top_k: number = 10): Promise<string> {
     });
 
     // Format results with maximum context
-    return uniqueResults.slice(0, 40).map((res: any, i: number) => {
+    return uniqueResults.slice(0, 30).map((res: any, i: number) => {
       const text = res.text || '';
       const highlights = res.highlights?.length > 0 ? res.highlights.join(' ... ') : '';
       const content = highlights || text.slice(0, 2000);
