@@ -66,7 +66,7 @@ async function getAccessToken(): Promise<string> {
   return tokenData.access_token;
 }
 
-async function exa_search(query: string, top_k: number = 10): Promise<string> {
+async function exa_search(query: string, selectedProfile: string, top_k: number = 10): Promise<string> {
   const EXA_API_KEY = process.env.EXA_API_KEY;
   if (!EXA_API_KEY) {
     console.warn('EXA_API_KEY not set, skipping web search');
@@ -195,7 +195,7 @@ async function exa_search(query: string, top_k: number = 10): Promise<string> {
     });
 
     // Format results with maximum context
-    return uniqueResults.slice(0, 30).map((res: any, i: number) => {
+    let exaFormatted = uniqueResults.slice(0, 30).map((res: any, i: number) => {
       const text = res.text || '';
       const highlights = res.highlights?.length > 0 ? res.highlights.join(' ... ') : '';
       const content = highlights || text.slice(0, 2000);
@@ -206,6 +206,120 @@ async function exa_search(query: string, top_k: number = 10): Promise<string> {
       }) : 'Не указана';
       return `[${i+1}] ${res.title}\nURL: ${res.url}\nДата публикации: ${pubDate}\nКонтент: ${content}`;
     }).join('\n\n---\n\n');
+
+    // Direct parsing from consultant.ru/legalnews/ and official sites
+    let parsedContent = '';
+
+    // Parse consultant.ru news
+    try {
+      const newsUrl = 'https://www.consultant.ru/legalnews/';
+      const res = await fetch(newsUrl);
+      if (res.ok) {
+        const html = await res.text();
+        const cheerio = await import('cheerio');
+        const { load } = cheerio;
+        const $ = load(html);
+
+        const queryLower = query.toLowerCase();
+        const profileKeywords: string[] = [];
+        // Map profile to keywords (simplified from news/route.ts)
+        const profileMap: { [key: string]: string[] } = {
+          'universal': [],
+          'accounting_hr': ['бухгалтерия', 'кадры', 'налог', 'зарплата', 'НДС', 'бухучет'],
+          'lawyer': ['юрист', 'суд', 'закон', 'права'],
+          'budget_accounting': ['бюджет', 'государственная организация', 'финансы', 'казна'],
+          'procurements': ['закупки', '44-ФЗ', 'тендер', 'УФАС', 'контракт'],
+          'hr': ['кадры', 'трудовой кодекс', 'сотрудник', 'увольнение', 'прием'],
+          'labor_safety': ['охрана труда', 'медосмотр', 'безопасность', 'профилактика'],
+          'nta': ['нормативно-технические акты', 'стандарты', 'ГОСТ', 'технические регламенты'],
+          'universal_budget': ['бюджет', 'государственная организация', 'финансы']
+        };
+        const keywords = profileMap[selectedProfile] || [];
+
+        let relevantNews: any[] = [];
+        $('a[href*="/legalnews/"]').each((i, el) => {
+          const href = $(el).attr('href');
+          if (href && href.includes('/legalnews/') && href.match(/\d+\/$/)) {
+            const fullLink = href.startsWith('http') ? href : `https://www.consultant.ru${href}`;
+            const text = $(el).text().trim().replace(/\s+/g, ' ');
+            let title = text;
+            let date = new Date().toLocaleDateString('ru-RU');
+            // Simple date extraction
+            const dateMatch = text.match(/^(Сегодня|Вчера|\d{1,2}\s+(января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)\s+\d{4})/i);
+            if (dateMatch) {
+              date = dateMatch[0].replace(/\n/g, ' ').trim();
+              title = text.replace(dateMatch[0], '').replace(/\n+/g, ' ').trim();
+            }
+
+            const titleLower = title.toLowerCase();
+            // Check relevance: matches query or profile keywords
+            const isRelevant = queryLower.split(' ').some(word => titleLower.includes(word)) ||
+                               keywords.some(kw => titleLower.includes(kw.toLowerCase()));
+
+            if (isRelevant && title.length > 10) {
+              // Fetch full article for more context
+              if (relevantNews.length < 5) { // Limit to 5
+                fetch(fullLink).then(async (articleRes) => {
+                  if (articleRes.ok) {
+                    const articleHtml = await articleRes.text();
+                    const article$ = load(articleHtml);
+                    const fullText = article$('#news_text').text().trim() || article$('.news-content').text().trim() || article$('p').text().trim();
+                    relevantNews.push({
+                      title,
+                      date,
+                      link: fullLink,
+                      content: fullText.slice(0, 1500) // Limit length
+                    });
+                  }
+                }).catch(console.error);
+              } else {
+                relevantNews.push({
+                  title,
+                  date,
+                  link: fullLink,
+                  content: '' // No full content if limit reached
+                });
+              }
+            }
+          }
+        });
+
+        // Wait a bit for fetches to complete (simple delay, in production use Promise.all)
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
+        // Format relevant consultant news
+        if (relevantNews.length > 0) {
+          parsedContent += '\n\n=== Актуальные новости с consultant.ru/legalnews/ ===\n';
+          relevantNews.forEach((news, i) => {
+            parsedContent += `[C${i+1}] ${news.title}\nURL: ${news.link}\nДата: ${news.date}\nКонтент: ${news.content || 'Краткое описание'}\n\n`;
+          });
+        }
+      }
+    } catch (e) {
+      console.error('Consultant parsing error:', e);
+    }
+
+    // Add parsing for other official sites if needed (e.g., cbr.ru for rates)
+    // For example, parse CBR key rate page
+    if (query.toLowerCase().includes('ключевая ставка') || query.toLowerCase().includes('цб')) {
+      try {
+        const cbrUrl = 'https://www.cbr.ru/hd_base/keypr/';
+        const res = await fetch(cbrUrl);
+        if (res.ok) {
+          const html = await res.text();
+          const cheerio = await import('cheerio');
+          const { load } = cheerio;
+          const $ = load(html);
+          const rateText = $('.key-rate').text() || $('#key_rate_current').text() || 'Не найдено';
+          parsedContent += `\n\n=== Актуальная ключевая ставка ЦБ РФ ===\nИсточник: cbr.ru\nСтавка: ${rateText}\nДата: ${currentDate}\n\n`;
+        }
+      } catch (e) {
+        console.error('CBR parsing error:', e);
+      }
+    }
+
+    // Combine Exa and parsed content
+    return exaFormatted + parsedContent;
   } catch (error) {
     console.error('Exa search error:', error);
     return '';
@@ -230,7 +344,7 @@ export async function POST(request: NextRequest) {
 
     // Extract the last user message as search query
     const lastUserMessage = messagesList[messagesList.length - 1]?.content || '';
-    const searchContext = await exa_search(lastUserMessage);
+    const searchContext = await exa_search(lastUserMessage, selectedProfile);
 
     // Map English profile value to Russian label
     const profileMap: { [key: string]: string } = {
