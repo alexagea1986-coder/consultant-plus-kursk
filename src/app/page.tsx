@@ -10,11 +10,15 @@ import Footer from "@/components/sections/footer"
 
 export default function Home() {
   const [anonymousLoggedIn, setAnonymousLoggedIn] = useState(true)
-  const [selectedProfile, setSelectedProfile] = useState("universal")
+  const [selectedProfile, setSelectedProfile] = useState(() => localStorage.getItem('selectedProfile') || "universal")
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
+
+  useEffect(() => {
+    localStorage.setItem('selectedProfile', selectedProfile);
+  }, [selectedProfile]);
 
   const handleAnonymousLogin = () => {
     setAnonymousLoggedIn(true)
