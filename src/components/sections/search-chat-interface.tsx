@@ -31,7 +31,7 @@ export default function SearchChatInterface({ selectedProfile }: SearchChatInter
             onChange={(e) => setQuery(e.target.value)}
             onInput={handleInput}
             placeholder={`Задайте вопрос по ${selectedProfile.toLowerCase()}...`}
-            className="w-full min-h-[40px] pl-10 pt-3 pb-3 pr-1 bg-white border-4 border-[#FFD700] rounded text-[#333333] placeholder-[#666666] resize-none overflow-hidden focus:ring-2 focus:ring-[#0066CC] focus:border-transparent leading-relaxed"
+            className="w-full min-h-[40px] pl-10 pt-3 pb-3 pr-1 bg-white border-4 border-[#FFD700] rounded text-[#333333] placeholder-[#666666] resize-none overflow-hidden break-all focus:ring-2 focus:ring-[#0066CC] focus:border-transparent leading-relaxed"
           />
         </div>
         <Button 
