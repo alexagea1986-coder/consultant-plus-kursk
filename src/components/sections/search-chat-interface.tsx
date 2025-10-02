@@ -22,7 +22,7 @@ export default function SearchChatInterface({ selectedProfile }: SearchChatInter
 
   return (
     <div className="bg-[#FFD700] rounded-b-md p-4 mb-6">
-      <div className="flex items-start gap-3 max-w-3xl mx-auto">
+      <div className="flex items-start gap-3">
         <div className="flex-1 relative min-h-[40px]">
           <Search className="absolute left-3 top-3 text-[#333333] w-4 h-4 flex-shrink-0 z-10" />
           <textarea
