@@ -89,7 +89,7 @@ export default function GigaChatWindow({ selectedProfile }: GigaChatWindowProps)
             }
           }}
           placeholder="Введите ваш вопрос..."
-          className="flex-1 min-h-[40px] max-h-[200px] text-[14px] bg-white text-foreground rounded-md border border-input px-3 py-2 resize-none overflow-y-auto focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex-1 min-w-0 min-h-[40px] max-h-[200px] text-[14px] bg-white text-foreground rounded-md border border-input px-3 py-2 resize-none overflow-y-auto break-all focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           disabled={isLoading}
           rows={1}
         />
