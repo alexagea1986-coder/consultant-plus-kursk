@@ -50,49 +50,47 @@ export default function Header({ anonymousLoggedIn, onAnonymousLogin, selectedPr
   { label: "О компании", href: "/about" },
   { label: "Контакты", href: "/contacts" }];
 
-
   return (
     <header className="bg-white shadow-sm px-4 py-2">
-      <div className="max-w-6xl mx-auto flex items-center justify-between">
-        {/* Logo */}
-        <div className="flex items-center">
+      <div className="max-w-6xl mx-auto flex items-center">
+        {/* Logo and profile - left aligned */}
+        <div className="flex items-center space-x-4 flex-shrink-0">
           <Image
             src="https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/test-clones/8548ce4b-c4e7-49fc-aeb1-0d89445da897-consultant-ru/assets/images/logoCircle-2.svg"
             alt="КонсультантПлюс"
             width={40}
             height={40}
-            className="mr-3" />
+            className="mr-0" />
 
-          <div>
-            <span className="text-xl font-bold text-[#0066CC] whitespace-pre-line block !whitespace-pre-line !whitespace-pre-line">НейроКонсультантПлюс</span>
-            <div className="flex items-center mt-1">
-              <span className="text-[12px] font-bold text-[#0066CC] mr-2 !whitespace-pre-line">Профиль:</span>
-              <Select value={selectedProfile} onValueChange={onProfileChange}>
-                <SelectTrigger
-                  className="text-[12px] text-[#666666] bg-white h-7 inline-flex items-center justify-between px-2">
-
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="text-[12px]">
-                  {profiles.map((profile) =>
-                  <SelectItem key={profile.value} value={profile.value} className="text-[12px] flex items-center">
-                      <span className="flex-1">{profile.label}</span>
-                    </SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="flex items-center space-x-2">
+            <span className="text-xl font-bold text-[#0066CC]">НейроКонсультантПлюс</span>
+            <span className="text-[12px] font-bold text-[#0066CC]">Профиль:</span>
+            <Select value={selectedProfile} onValueChange={onProfileChange}>
+              <SelectTrigger
+                className="text-[12px] text-[#666666] bg-white h-6 w-auto inline-flex items-center justify-between px-2 border border-gray-300">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="text-[12px]">
+                {profiles.map((profile) =>
+                <SelectItem key={profile.value} value={profile.value} className="text-[12px] flex items-center">
+                    <span className="flex-1">{profile.label}</span>
+                  </SelectItem>
+                )}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
+        {/* Spacer for centering nav */}
+        <div className="flex-1 min-w-0"></div>
+
         {/* Navigation - centered */}
-        <nav className="hidden md:flex items-center space-x-8">
+        <nav className="hidden md:flex items-center space-x-8 flex-shrink-0">
           <a
             href="https://consultant-plus-kursk.ru/"
             target="_blank"
             rel="noopener noreferrer"
             className="text-[14px] font-medium text-[#0066CC] hover:text-[#FFD700] transition-colors duration-200 no-underline">
-
             Новости
           </a>
           <a
@@ -100,7 +98,6 @@ export default function Header({ anonymousLoggedIn, onAnonymousLogin, selectedPr
             target="_blank"
             rel="noopener noreferrer"
             className="text-[14px] font-medium text-[#0066CC] hover:text-[#FFD700] transition-colors duration-200 no-underline">
-
             Продукты
           </a>
           <a
@@ -108,7 +105,6 @@ export default function Header({ anonymousLoggedIn, onAnonymousLogin, selectedPr
             target="_blank"
             rel="noopener noreferrer"
             className="text-[14px] font-medium text-[#0066CC] hover:text-[#FFD700] transition-colors duration-200 no-underline">
-
             О компании
           </a>
           <a
@@ -116,13 +112,15 @@ export default function Header({ anonymousLoggedIn, onAnonymousLogin, selectedPr
             target="_blank"
             rel="noopener noreferrer"
             className="text-[14px] font-medium text-[#0066CC] hover:text-[#FFD700] transition-colors duration-200 no-underline">
-
             Контакты
           </a>
         </nav>
 
+        {/* Spacer for right alignment */}
+        <div className="flex-1 min-w-0"></div>
+
         {/* Contact Info - right aligned */}
-        <div className="hidden md:flex items-center text-sm text-[#666666]">
+        <div className="hidden md:flex items-center text-sm text-[#666666] flex-shrink-0">
           <a href="tel:+74712526969" className="hover:text-[#0066CC]">тел. (4712) 52-69-69</a>
         </div>
       </div>
