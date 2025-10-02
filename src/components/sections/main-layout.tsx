@@ -15,9 +15,9 @@ export default function MainLayout({ newsSidebar, aiSearch, additionalServices }
   const middleRef = useRef<HTMLDivElement>(null);
   const rightRef = useRef<HTMLDivElement>(null);
 
-  const leftPercentRef = useRef(33.33);
-  const middlePercentRef = useRef(50);
-  const rightPercentRef = useRef(16.67);
+  const leftPercentRef = useRef(25);
+  const middlePercentRef = useRef(65);
+  const rightPercentRef = useRef(10);
 
   const [isLg, setIsLg] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -27,9 +27,9 @@ export default function MainLayout({ newsSidebar, aiSearch, additionalServices }
   const [startMiddlePercent, setStartMiddlePercent] = useState(0);
   const [startRightPercent, setStartRightPercent] = useState(0);
 
-  const [leftPercent, setLeftPercent] = useState(33.33);
-  const [middlePercent, setMiddlePercent] = useState(50);
-  const [rightPercent, setRightPercent] = useState(16.67);
+  const [leftPercent, setLeftPercent] = useState(25);
+  const [middlePercent, setMiddlePercent] = useState(65);
+  const [rightPercent, setRightPercent] = useState(10);
 
   // Load from localStorage on mount with validation
   useEffect(() => {
@@ -41,7 +41,7 @@ export default function MainLayout({ newsSidebar, aiSearch, additionalServices }
         const sum = l + m + r;
         if (
           typeof l === 'number' && typeof m === 'number' && typeof r === 'number' &&
-          l >= 15 && m >= 30 && r >= 10 &&
+          l >= 20 && m >= 50 && r >= 10 &&
           Math.abs(sum - 100) < 0.5
         ) {
           setLeftPercent(l);
@@ -88,12 +88,12 @@ export default function MainLayout({ newsSidebar, aiSearch, additionalServices }
 
     if (whichHandle === 1) {
       let newLeft = startLeftPercent + deltaPercent;
-      newLeft = Math.max(15, Math.min(50, newLeft));
+      newLeft = Math.max(20, Math.min(35, newLeft));
       const oldSumLM = startLeftPercent + startMiddlePercent;
       let newMiddle = oldSumLM - newLeft;
-      if (newMiddle < 30) {
-        newLeft = oldSumLM - 30;
-        newMiddle = 30;
+      if (newMiddle < 50) {
+        newLeft = oldSumLM - 50;
+        newMiddle = 50;
       }
       setLeftPercent(newLeft);
       leftPercentRef.current = newLeft;
@@ -104,8 +104,8 @@ export default function MainLayout({ newsSidebar, aiSearch, additionalServices }
       let newMiddle = startMiddlePercent + deltaPercent;
       const oldSumMR = startMiddlePercent + startRightPercent;
       let newRight = oldSumMR - newMiddle;
-      newMiddle = Math.max(30, Math.min(60, newMiddle));
-      newRight = Math.max(10, Math.min(30, newRight));
+      newMiddle = Math.max(50, Math.min(70, newMiddle));
+      newRight = Math.max(10, Math.min(25, newRight));
       if (newMiddle > oldSumMR - 10) {
         newMiddle = oldSumMR - 10;
       }
@@ -164,7 +164,7 @@ export default function MainLayout({ newsSidebar, aiSearch, additionalServices }
   if (isLg) {
     return (
       <div className="bg-background flex-1">
-        <div className="w-full max-w-[1200px] mx-auto px-1 sm:px-2 lg:px-3 flex flex-col lg:flex-row h-full">
+        <div className="w-full px-4 flex flex-col lg:flex-row h-full">
           <div ref={containerRef} className="flex flex-col lg:flex-row gap-1 flex-1 h-full">
             <div 
               ref={leftRef} 
