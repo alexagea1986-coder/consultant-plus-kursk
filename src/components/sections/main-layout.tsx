@@ -164,11 +164,11 @@ export default function MainLayout({ newsSidebar, aiSearch, additionalServices }
   if (isLg) {
     return (
       <div className="bg-background flex-1">
-        <div className="w-full px-4 flex flex-col lg:flex-row h-full">
-          <div ref={containerRef} className="flex flex-col lg:flex-row gap-1 flex-1 h-full max-w-6xl mx-auto">
+        <div className="w-full px-5 flex flex-col lg:flex-row h-full">
+          <div ref={containerRef} className="flex flex-col lg:flex-row gap-1 flex-1 h-full max-w-[1200px] mx-auto">
             <div 
               ref={leftRef} 
-              className="h-full w-full lg:flex-none overflow-y-auto border border-[#D4AF37] rounded-md" 
+              className="h-full w-full lg:flex-none overflow-y-auto border border-[#D4AF37] rounded-lg" 
               style={{ flexBasis: `${leftPercent}%` }}
             >
               {newsSidebar}
@@ -184,7 +184,7 @@ export default function MainLayout({ newsSidebar, aiSearch, additionalServices }
             </div>
             <div 
               ref={middleRef} 
-              className="h-full w-full lg:flex-none overflow-y-auto border border-[#D4AF37] rounded-md" 
+              className="h-full w-full lg:flex-none overflow-y-auto border border-[#D4AF37] rounded-lg" 
               style={{ flexBasis: `${middlePercent}%` }}
             >
               {aiSearch}
@@ -200,7 +200,7 @@ export default function MainLayout({ newsSidebar, aiSearch, additionalServices }
             </div>
             <div 
               ref={rightRef} 
-              className="h-full w-full lg:flex-none overflow-y-auto border border-[#D4AF37] rounded-md" 
+              className="h-full w-full lg:flex-none overflow-y-auto border border-[#D4AF37] rounded-lg" 
               style={{ flexBasis: `${rightPercent}%` }}
             >
               {additionalServices}
@@ -212,14 +212,14 @@ export default function MainLayout({ newsSidebar, aiSearch, additionalServices }
   } else {
     return (
       <div className="bg-background flex-1">
-        <div className="w-full max-w-[1200px] mx-auto px-1 sm:px-2 lg:px-3 flex flex-col h-full">
-          <div className="w-full flex-none overflow-y-auto mb-4 border border-[#D4AF37] rounded-md">
+        <div className="w-full max-w-[1200px] mx-auto px-5 flex flex-col h-full">
+          <div className="w-full flex-none overflow-y-auto mb-4 border border-[#D4AF37] rounded-lg">
             {aiSearch}
           </div>
-          <div className="w-full flex-none overflow-y-auto mb-4 border border-[#D4AF37] rounded-md">
+          <div className="w-full flex-none overflow-y-auto mb-4 border border-[#D4AF37] rounded-lg">
             {newsSidebar}
           </div>
-          <div className="w-full flex-none overflow-y-auto border border-[#D4AF37] rounded-md">
+          <div className="w-full flex-none overflow-y-auto border border-[#D4AF37] rounded-lg">
             {additionalServices}
           </div>
         </div>
