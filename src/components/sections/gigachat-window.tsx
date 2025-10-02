@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,6 +18,14 @@ export default function GigaChatWindow({ selectedProfile }: GigaChatWindowProps)
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px';
+    }
+  }, [inputValue]);
 
   const handleSend = async () => {
     if (!inputValue.trim()) return;
@@ -69,16 +77,23 @@ export default function GigaChatWindow({ selectedProfile }: GigaChatWindowProps)
           <div className="bg-muted p-3 rounded text-foreground">Генерация ответа...</div>
         )}
       </div>
-      <div className="flex space-x-2">
-        <Input
+      <div className="flex space-x-2 items-end">
+        <textarea
+          ref={textareaRef}
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
-          onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+          onKeyPress={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              handleSend();
+            }
+          }}
           placeholder="Введите ваш вопрос..."
-          className="flex-1 text-[14px] bg-white text-foreground"
+          className="flex-1 min-h-[40px] max-h-[200px] text-[14px] bg-white text-foreground rounded-md border border-input px-3 py-2 resize-none overflow-y-auto focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           disabled={isLoading}
+          rows={1}
         />
-        <Button onClick={handleSend} disabled={isLoading || !inputValue.trim()} className="bg-primary text-primary-foreground hover:bg-primary/90 border border-primary">
+        <Button onClick={handleSend} disabled={isLoading || !inputValue.trim()} className="bg-primary text-primary-foreground hover:bg-primary/90 border border-primary shrink-0">
           <Send className="w-4 h-4" />
         </Button>
       </div>
