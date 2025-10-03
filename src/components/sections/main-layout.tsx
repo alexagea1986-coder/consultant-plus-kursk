@@ -164,7 +164,7 @@ export default function MainLayout({ newsSidebar, aiSearch, additionalServices }
   if (isLg) {
     return (
       <div className="bg-background flex-1">
-        <div className="w-full px-4 flex flex-col lg:flex-row h-full">
+        <div className="w-full max-w-[1200px] mx-auto px-4 flex flex-col lg:flex-row h-full">
           <div ref={containerRef} className="flex flex-col lg:flex-row gap-1 flex-1 h-full">
             <div 
               ref={leftRef} 
