@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server'
-import puppeteer from 'puppeteer'
+import axios from 'axios'
+import * as cheerio from 'cheerio'
 
 // Cache for 10 minutes
-let newsCache: { [key: string]: { data: any; timestamp: number } } = {}
+let newsCache: { [key: string]: { data: any[]; timestamp: number } } = {}
 const CACHE_DURATION = 10 * 60 * 1000 // 10 minutes
 
-// Updated mapping for user's profiles to consultant.ru checkboxes
+// Mapping for profiles (for future use)
 const profileToScopes: { [key: string]: string } = {
   accounting_hr: 'accountant',
   lawyer: 'jurist',
@@ -18,96 +19,59 @@ const profileToScopes: { [key: string]: string } = {
   universal_budget: 'accountant,jurist,budget,procurements,hr,medicine,nta'
 }
 
-async function fetchNewsForScopes(scopes: string): Promise<any[]> {
+async function fetchNews(scopes?: string): Promise<any[]> {
   const now = Date.now()
-  const cacheKey = `all_${scopes}` // Prefix for all news or filtered
+  const cacheKey = scopes || 'all'
   
   // Check cache
   if (newsCache[cacheKey] && (now - newsCache[cacheKey].timestamp) < CACHE_DURATION) {
     return newsCache[cacheKey].data
   }
 
-  const browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox'] })
   try {
-    const page = await browser.newPage()
-    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36')
-    await page.goto('https://www.consultant.ru/legalnews/', { waitUntil: 'networkidle2' })
+    // Fetch HTML from consultant.ru (all news by default, as site loads all scopes enabled)
+    const response = await axios.get('https://www.consultant.ru/legalnews/', {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+      },
+      timeout: 10000
+    })
+    const html = response.data
+    const $ = cheerio.load(html)
 
-    // Simulate checkbox clicks for scopes (direct link to source checkboxes)
-    // Checkboxes selectors based on site structure: labels or inputs with scope names
-    const scopeMap: Record<string, string> = {
-      accountant: 'label[for="scope-accountant"], input[name*="accountant"]', // Adjust based on actual selectors
-      jurist: 'label[for="scope-jurist"], input[name*="jurist"]',
-      budget: 'label[for="scope-budget"], input[name*="budget"]',
-      procurements: 'label[for="scope-procurements"], input[name*="procurements"]',
-      hr: 'label[for="scope-hr"], input[name*="hr"]',
-      medicine: 'label[for="scope-medicine"], input[name*="medicine"]',
-      nta: 'label[for="scope-nta"], input[name*="nta"]'
-    }
+    const items: any[] = []
+    // Parse news items from HTML structure (based on site: .ln-item or similar links)
+    $('a[href*="/legalnews/"').each((i, el) => {
+      if (items.length >= 5) return false // Limit to 5
 
-    // For "all news" (initial load): ensure no filters or click all/uncheck all if needed
-    if (!scopes || scopes === 'all') {
-      // Click "All news" or clear filters - site base loads all by default
-      // If site auto-selects, uncheck all first then skip
-      await page.evaluate(() => {
-        // Simulate "Все новости" - clear scopes if any
-        document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false)
-      })
-    } else {
-      // Clear all first
-      await page.evaluate(() => {
-        document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false)
-      })
-      // Click selected scopes
-      const selected = scopes.split(',')
-      for (const scope of selected) {
-        const selector = scopeMap[scope] || `input[value="${scope}"]`
-        await page.click(selector, { delay: 100 })
-        await page.waitForTimeout(500) // Wait for each click
+      const linkEl = $(el)
+      const href = linkEl.attr('href')
+      if (!href || !href.match(/\d+\/$/)) return true
+
+      const fullLink = href.startsWith('http') ? href : 'https://www.consultant.ru' + href
+      const title = linkEl.text().trim().replace(/\s+/g, ' ')
+      if (title.length < 10) return true
+
+      // Find date and description in parent or next elements
+      const parent = linkEl.closest('.ln-item, article, .news-item')
+      let date = parent.find('.ln-item__date, .date, time').text().trim() || new Date().toLocaleDateString('ru-RU')
+      let description = parent.find('.ln-item__description, .description, p').first().text().trim().replace(/\s+/g, ' ') || ''
+
+      // Avoid duplicates
+      if (!items.some(item => item.title === title)) {
+        items.push({ title, date, description, link: fullLink })
       }
-    }
-
-    // Wait for JS filter to apply
-    await page.waitForTimeout(3000) // 3 sec for client-side update
-
-    // Scrape visible news (only displayed items)
-    const news = await page.evaluate(() => {
-      const items: any[] = []
-      // Select visible news elements (adjust selectors based on site DOM)
-      document.querySelectorAll('.ln-item.visible, .news-item:not(.hidden), article[role="article"]').forEach((el: Element) => {
-        if (items.length >= 5) return
-        
-        const linkEl = el.querySelector('a[href*="/legalnews/"]') as HTMLAnchorElement
-        if (!linkEl || !linkEl.href.match(/\d+\/$/)) return
-        
-        const fullLink = linkEl.href
-        const titleEl = el.querySelector('.ln-item__title, h3, .news-title') as HTMLElement
-        const title = titleEl?.textContent?.trim().replace(/\s+/g, ' ') || ''
-        
-        const dateEl = el.querySelector('.ln-item__date, .news-date, time') as HTMLElement
-        const date = dateEl?.textContent?.trim() || new Date().toLocaleDateString('ru-RU')
-        
-        const descEl = el.querySelector('.ln-item__description, .news-description, p') as HTMLElement
-        const description = descEl?.textContent?.trim() || ''
-        
-        if (title.length > 10) {
-          items.push({ title, date, description, link: fullLink })
-        }
-      })
-      return items
     })
 
-    const result = news.slice(0, 5)
+    const result = items.slice(0, 5)
     
-    // Update cache
+    // Update cache (ignore scopes for now, as site doesn't filter server-side)
     newsCache[cacheKey] = { data: result, timestamp: now }
     
     return result
   } catch (err) {
-    console.error(`Error with Puppeteer for scopes ${scopes}:`, err)
-    return []
-  } finally {
-    await browser.close()
+    console.error('News fetch error:', err)
+    return [] // Empty on error
   }
 }
 
@@ -115,21 +79,14 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
     const requestedProfile = searchParams.get('profile')
-    const requestedScopes = searchParams.get('scopes') || 'all' // Default to all news
+    const requestedScopes = searchParams.get('scopes')
 
-    let news
-    if (requestedScopes !== 'all' && requestedScopes) {
-      news = await fetchNewsForScopes(requestedScopes)
-    } else if (requestedProfile && profileToScopes[requestedProfile]) {
-      news = await fetchNewsForScopes(profileToScopes[requestedProfile])
-    } else {
-      // Initial load: all news
-      news = await fetchNewsForScopes('all')
-    }
+    // For now, load all news (scopes/profile ignored until dynamic filtering fixed)
+    const news = await fetchNews(requestedScopes || (requestedProfile ? profileToScopes[requestedProfile] : undefined))
 
     return NextResponse.json({ news })
   } catch (err: unknown) {
     console.error('API Error:', err)
-    return NextResponse.json({ error: 'Не удалось загрузить новости' }, { status: 500 })
+    return NextResponse.json({ news: [], error: 'Не удалось загрузить новости' }, { status: 500 })
   }
 }
