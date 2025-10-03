@@ -15,22 +15,9 @@ interface NewsSidebarProps {
 }
 
 export default function NewsSidebar({ anonymousLoggedIn, selectedProfile }: NewsSidebarProps) {
-  const [profileNews, setProfileNews] = useState<Record<string, NewsItem[]>>({})
+  const [news, setNews] = useState<NewsItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [filteredNews, setFilteredNews] = useState<NewsItem[]>([])
-
-  const profileKeywords = {
-    universal: [], // show all
-    accounting_hr: ['бухгалтерия', 'кадры', 'налог', 'зарплата', 'НДС', 'бухучет'],
-    lawyer: ['юрист', 'суд', 'закон', 'ВС РФ', 'права'],
-    budget_accounting: ['бюджет', 'государственная организация', 'финансы', 'казна'],
-    procurements: ['закупки', '44-ФЗ', 'тендер', 'УФАС', 'контракт'],
-    hr: ['кадры', 'трудовой кодекс', 'сотрудник', 'увольнение', 'прием'],
-    labor_safety: ['охрана труда', 'медосмотр', 'безопасность', 'профилактика'],
-    nta: ['нормативно-технические акты', 'стандарты', 'ГОСТ', 'технические регламенты'],
-    universal_budget: ['бюджет', 'государственная организация', 'финансы']
-  }
 
   useEffect(() => {
     if (!anonymousLoggedIn) return
@@ -39,7 +26,9 @@ export default function NewsSidebar({ anonymousLoggedIn, selectedProfile }: News
       try {
         setLoading(true)
         setError(null)
-        const response = await fetch('/api/news')
+        
+        // Fetch only the selected profile
+        const response = await fetch(`/api/news?profile=${selectedProfile}`)
         if (!response.ok) throw new Error('Failed to fetch news')
         
         const data = await response.json()
@@ -47,7 +36,9 @@ export default function NewsSidebar({ anonymousLoggedIn, selectedProfile }: News
           throw new Error(data.error)
         }
         
-        setProfileNews(data.profiles || {})
+        // Extract news for selected profile
+        const profileNews = data.profiles?.[selectedProfile] || []
+        setNews(profileNews)
       } catch (err: any) {
         setError(err.message || "Не удалось загрузить новости")
         console.error(err)
@@ -57,12 +48,7 @@ export default function NewsSidebar({ anonymousLoggedIn, selectedProfile }: News
     }
 
     fetchNews()
-  }, [anonymousLoggedIn])
-
-  useEffect(() => {
-    const newsForProfile = profileNews[selectedProfile] || []
-    setFilteredNews(newsForProfile)
-  }, [selectedProfile, profileNews])
+  }, [anonymousLoggedIn, selectedProfile])
 
   if (!anonymousLoggedIn) {
     return <div className="bg-white rounded-md p-2 h-full flex flex-col border border-[#DAA520]"></div>
@@ -109,7 +95,7 @@ export default function NewsSidebar({ anonymousLoggedIn, selectedProfile }: News
       </div>
 
       <div className="space-y-1 flex-1">
-        {filteredNews.slice(0, 5).map((item, index) => (
+        {news.slice(0, 5).map((item, index) => (
           <a
             key={index}
             href={item.link}
@@ -124,7 +110,7 @@ export default function NewsSidebar({ anonymousLoggedIn, selectedProfile }: News
             <p className="text-xs text-[#666666] leading-tight line-clamp-2">{item.description}</p>
           </a>
         ))}
-        {filteredNews.length === 0 && (
+        {news.length === 0 && (
           <p className="text-[#666666] text-center py-1">Новости не найдены для выбранного профиля</p>
         )}
       </div>

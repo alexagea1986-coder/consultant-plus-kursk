@@ -1,121 +1,114 @@
 import { NextResponse } from 'next/server'
 
-export async function GET() {
+// Cache for 10 minutes
+let newsCache: { [key: string]: { data: any; timestamp: number } } = {}
+const CACHE_DURATION = 10 * 60 * 1000 // 10 minutes
+
+// Profile to scopes mapping
+const profileToScopes: { [key: string]: string } = {
+  universal: 'accountant,jurist,procurements,hr,medicine,nta', // All except budget
+  accounting_hr: 'accountant',
+  lawyer: 'jurist',
+  budget_accounting: 'budget',
+  procurements: 'procurements',
+  hr: 'hr',
+  labor_safety: 'medicine',
+  nta: 'nta',
+  universal_budget: 'accountant,jurist,budget,procurements,hr,medicine,nta' // All
+}
+
+async function fetchNewsForProfile(profile: string, scopes: string): Promise<any[]> {
+  const now = Date.now()
+  const cacheKey = profile
+  
+  // Check cache
+  if (newsCache[cacheKey] && (now - newsCache[cacheKey].timestamp) < CACHE_DURATION) {
+    return newsCache[cacheKey].data
+  }
+
   try {
-    const allNews: any[] = []
-    let page = 1
-    const maxPages = 10  // Fetch up to 10 recent pages to ensure enough for all profiles
-
-    function parseRussianDate(dateStr: string): Date {
-      const now = new Date()
-      if (dateStr.includes('Сегодня')) return new Date(now.getFullYear(), now.getMonth(), now.getDate())
-      if (dateStr.includes('Вчера')) return new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1)
-      const match = dateStr.match(/(\d{1,2})\s+(января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)\s+(\d{4})/i)
-      if (match) {
-        const day = parseInt(match[1])
-        const monthNames = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря']
-        const month = monthNames.indexOf(match[2].toLowerCase()) + 1
-        const year = parseInt(match[3])
-        return new Date(year, month - 1, day)
+    const url = `https://www.consultant.ru/legalnews/?scopes=${scopes}`
+    const res = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
       }
-      return new Date(dateStr) // fallback
-    }
-
-    while (page <= maxPages) {
-      const url = page === 1 ? 'https://www.consultant.ru/legalnews/' : `https://www.consultant.ru/legalnews/?page=${page}`
-      const res = await fetch(url)
-      if (!res.ok) {
-        console.warn(`Failed to fetch page ${page}`)
-        break
-      }
-      const html = await res.text()
-      
-      // Dynamic import to avoid ESM build issues
-      const cheerio = await import('cheerio')
-      const { load } = cheerio
-      const $ = load(html)
-      
-      $('a[href*="/legalnews/"]').each((i, el) => {
-        const href = $(el).attr('href')
-        if (href && href.includes('/legalnews/') && href.match(/\d+\/$/)) {
-          const fullLink = href.startsWith('http') ? href : `https://www.consultant.ru${href}`
-          const text = $(el).text().trim().replace(/\s+/g, ' ')
-          
-          let date = new Date().toLocaleDateString('ru-RU')
-          let title = text
-          const dateMatch = text.match(/^(Сегодня|Вчера|\d{1,2}\s+(января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)\s+\d{4})/i)
-          if (dateMatch) {
-            date = dateMatch[0].replace(/\n/g, ' ').trim()
-            title = text.replace(dateMatch[0], '').replace(/\n+/g, ' ').trim()
-          }
-          
-          let description = $(el).next().text().trim() || ''
-          if (description.length < 20) description = ''
-          
-          if (title.length > 10 && !allNews.some(item => item.title === title)) {
-            allNews.push({
-              title,
-              date,
-              description,
-              link: fullLink
-            })
-          }
-        }
-      })
-
-      page++
-      if (allNews.length >= 200) break
-    }
-
-    // Sort by date descending (latest first)
-    allNews.sort((a, b) => parseRussianDate(b.date).getTime() - parseRussianDate(a.date).getTime())
-
-    // Remove duplicates based on title after sorting
-    const uniqueNews: any[] = []
-    const seenTitles = new Set()
-    for (const item of allNews) {
-      if (!seenTitles.has(item.title)) {
-        seenTitles.add(item.title)
-        uniqueNews.push(item)
-      }
-    }
-
-    // Define profiles and keywords
-    type ProfileKey = 'universal' | 'accounting_hr' | 'lawyer' | 'budget_accounting' | 'procurements' | 'hr' | 'labor_safety' | 'nta' | 'universal_budget';
-    const profiles: Record<ProfileKey, string[]> = {
-      universal: [] as string[],
-      accounting_hr: ['бухгалтерия', 'кадры', 'налог', 'зарплата', 'НДС', 'бухучет'],
-      lawyer: ['юрист', 'суд', 'закон', 'ВС РФ', 'права'],
-      budget_accounting: ['бюджет', 'государственная организация', 'финансы', 'казна'],
-      procurements: ['закупки', '44-ФЗ', 'тендер', 'УФАС', 'контракт'],
-      hr: ['кадры', 'трудовой кодекс', 'сотрудник', 'увольнение', 'прием'],
-      labor_safety: ['охрана труда', 'медосмотр', 'безопасность', 'профилактика'],
-      nta: ['нормативно-технические акты', 'стандарты', 'ГОСТ', 'технические регламенты'],
-      universal_budget: ['бюджет', 'государственная организация', 'финансы']
-    };
-
-    // Pre-filter top 5 latest for each profile
-    const profileNews: Record<ProfileKey, any[]> = {}
+    })
     
-    // Universal: top 5 overall latest
-    profileNews.universal = uniqueNews.slice(0, 5)
+    if (!res.ok) {
+      console.warn(`Failed to fetch news for ${profile}`)
+      return []
+    }
 
-    // For each other profile - use typed keys to avoid indexing issues
-    type ProfileKey = 'universal' | 'accounting_hr' | 'lawyer' | 'budget_accounting' | 'procurements' | 'hr' | 'labor_safety' | 'nta' | 'universal_budget';
-    const profileKeys: ProfileKey[] = ['accounting_hr', 'lawyer', 'budget_accounting', 'procurements', 'hr', 'labor_safety', 'nta', 'universal_budget'];
+    const html = await res.text()
+    const cheerio = await import('cheerio')
+    const { load } = cheerio
+    const $ = load(html)
+    
+    const news: any[] = []
+    
+    // Parse news items
+    $('a[href*="/legalnews/"]').each((i, el) => {
+      if (news.length >= 5) return false // Stop after 5 items
+      
+      const href = $(el).attr('href')
+      if (href && href.includes('/legalnews/') && href.match(/\d+\/$/)) {
+        const fullLink = href.startsWith('http') ? href : `https://www.consultant.ru${href}`
+        const text = $(el).text().trim().replace(/\s+/g, ' ')
+        
+        let date = new Date().toLocaleDateString('ru-RU')
+        let title = text
+        const dateMatch = text.match(/^(Сегодня|Вчера|\d{1,2}\s+(января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)\s+\d{4})/i)
+        if (dateMatch) {
+          date = dateMatch[0].replace(/\n/g, ' ').trim()
+          title = text.replace(dateMatch[0], '').replace(/\n+/g, ' ').trim()
+        }
+        
+        let description = $(el).next().text().trim() || ''
+        if (description.length < 20) description = ''
+        
+        if (title.length > 10 && !news.some(item => item.title === title)) {
+          news.push({ title, date, description, link: fullLink })
+        }
+      }
+    })
 
-    profileKeys.forEach(profile => {
-      const keywords = profiles[profile] as string[]; // Ensure typing
-      const filtered = uniqueNews.filter(item =>
-        keywords.some(kw =>
-          item.title.toLowerCase().includes(kw.toLowerCase()) ||
-          (item.description && item.description.toLowerCase().includes(kw.toLowerCase()))
-        )
-      );
-      profileNews[profile] = filtered.slice(0, 5);
-    });
+    const result = news.slice(0, 5)
+    
+    // Update cache
+    newsCache[cacheKey] = { data: result, timestamp: now }
+    
+    return result
+  } catch (err) {
+    console.error(`Error fetching news for ${profile}:`, err)
+    return []
+  }
+}
 
-    return NextResponse.json({ profiles: profileNews })
+export async function GET(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const requestedProfile = searchParams.get('profile')
+    
+    // If specific profile requested, fetch only that one
+    if (requestedProfile && profileToScopes[requestedProfile]) {
+      const news = await fetchNewsForProfile(requestedProfile, profileToScopes[requestedProfile])
+      return NextResponse.json({ profiles: { [requestedProfile]: news } })
+    }
+    
+    // Otherwise, fetch all profiles in parallel
+    const profileEntries = Object.entries(profileToScopes)
+    const results = await Promise.all(
+      profileEntries.map(([profile, scopes]) => 
+        fetchNewsForProfile(profile, scopes).then(news => ({ profile, news }))
+      )
+    )
+    
+    const allProfiles: Record<string, any[]> = {}
+    results.forEach(({ profile, news }) => {
+      allProfiles[profile] = news
+    })
+
+    return NextResponse.json({ profiles: allProfiles })
   } catch (err) {
     console.error(err)
     return NextResponse.json({ error: 'Не удалось загрузить новости' }, { status: 500 })
