@@ -295,24 +295,24 @@ async function fetchNewsForScopes(scopes: string): Promise<any[]> {
   }
 }
 
-// Improved keyword fallback with more accurate terms
+// Enhanced keywords for HR based on recent news patterns - expanded significantly
+const keywords: { [key: string]: string[] } = {
+  accountant: ['бухгалтерский', 'учет', 'налог', 'nds', 'ндфл', 'усн', 'отчетность', 'бухгалтерия', 'финансовый', 'аудит', 'бухгалтер', 'расчет', 'амортизация', 'баланс'],
+  jurist: ['право', 'закон', 'суд', 'арбитраж', 'гражданский', 'уголовный', 'административный', 'юридический', 'контракт', 'договор', 'иск', 'поправка', 'решение', 'прокурор', 'адвокат'],
+  budget: ['бюджетный', 'государственный', 'казначейство', 'субсидия', 'трансферт', 'финансирование', 'ассигнование', 'дефицит', 'доходы', 'расходы', 'бюджет'],
+  procurements: ['закупки', 'тендер', 'аукцион', '44-ФЗ', '223-ФЗ', 'поставка', 'конкурс', 'торги', 'поставщик', 'исполнение контракта', 'закупка'],
+  hr: ['кадровый', 'трудовой', 'зарплата', 'отпуск', 'увольнение', 'прием', 'трудовой договор', 'охрана труда', 'кадры', 'персонал', 'мотивация', 'оценка', 'аттестация', 'кадровик', 'кадровика', 'тк рф', 'трудовой кодекс', 'найм', 'трудоустройство', 'квоты', 'инвалид', 'изменения для кадровика', 'трудовые отношения', 'трудовые спора', 'дисциплинарный', 'коллективный договор', 'трудовая инспекция', 'профсоюз', 'стажировка', 'компенсация', 'премия', 'график работы', 'сверхурочные', 'командировка', 'больничный', 'трудоустройство', 'трудовые отношения', 'кадровые изменения', 'персонал', 'сотрудник', 'работодатель', 'мигрантов', 'патент', 'иностранцев', 'несовершеннолетние', 'высококвалифицированный', 'премии', 'материальной ответственности', 'командировках', 'отпуска', 'усыновившем', 'трудовое законодательство', 'кадровая', 'работники', 'сотрудники', 'труд', 'кадровая политика', 'трудовые права', 'работа', 'занятость', 'трудовые споры', 'трудовой стаж', 'трудовая книжка', 'электронная трудовая книжка', 'трудовой договор', 'увольнение по сокращению', 'трудовая дискриминация', 'защита трудовых прав', 'трудовые инспекции', 'профсоюзы', 'коллективные переговоры'],
+  medicine: ['медицинский', 'здравоохранение', 'лекарство', 'больница', 'врач', 'пациент', 'фармацевтический', 'диагностика', 'профилактика', 'реабилитация', 'медпомощь', 'лицензирование'],
+  nta: ['нормативный', 'технический', 'стандарт', 'ГОСТ', 'техрегламент', 'сертификация', 'аккредитация', 'контроль', 'соответствие', 'норматив', 'акты', 'технические требования']
+}
+
+// Improved keyword fallback - more robust parsing and lower threshold for HR
 async function fetchNewsWithKeywords(scopes: string): Promise<any[]> {
   const cacheKey = `keywords_${scopes.replace(/,/g, '_')}`
   const now = Date.now()
   
   if (newsCache[cacheKey] && (now - newsCache[cacheKey].timestamp) < CACHE_DURATION) {
     return newsCache[cacheKey].data
-  }
-
-  // Expanded keyword dictionary based on common themes
-  const keywords: { [key: string]: string[] } = {
-    accountant: ['бухгалтерский', 'учет', 'налог', 'nds', 'ндфл', 'усьон', 'отчетность', 'бухгалтерия', 'финансовый', 'аудит', 'бухгалтер', 'расчет', 'амортизация', 'баланс'],
-    jurist: ['право', 'закон', 'суд', 'арбитраж', 'гражданский', 'уголовный', 'административный', 'юридический', 'контракт', 'договор', 'иск', 'поправка', 'решение', 'прокурор', 'адвокат'],
-    budget: ['бюджетный', 'государственный', 'казначейство', 'субсидия', 'трансферт', 'финансирование', 'ассигнование', 'дефицит', 'доходы', 'расходы', 'бюджет'],
-    procurements: ['закупки', 'тендер', 'аукцион', '44-ФЗ', '223-ФЗ', 'поставка', 'конкурс', 'торги', 'поставщик', 'исполнение контракта', 'закупка'],
-    hr: ['кадровый', 'трудовой', 'зарплата', 'отпуск', 'увольнение', 'прием', 'трудовой договор', 'охрана труда', 'кадры', 'персонал', 'мотивация', 'оценка', 'аттестация'],
-    medicine: ['медицинский', 'здравоохранение', 'лекарство', 'б病院', 'врач', 'пациент', 'фармацевтический', 'диагностика', 'профилактика', 'реабилитация', 'медпомощь', 'лицензирование'],
-    nta: ['нормативный', 'технический', 'стандарт', 'ГОСТ', 'техрегламент', 'сертификация', 'аккредитация', 'контроль', 'соответствие', 'норматив', 'акты', 'технические требования']
   }
 
   const requestedScopesArray = scopes.split(',')
@@ -324,7 +324,7 @@ async function fetchNewsWithKeywords(scopes: string): Promise<any[]> {
     const url = 'https://www.consultant.ru/legalnews/'
     const res = await fetch(url, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
       }
     })
     
@@ -336,56 +336,113 @@ async function fetchNewsWithKeywords(scopes: string): Promise<any[]> {
     const $ = load(html)
     
     const allNews: any[] = []
-    $('a[href*="/legalnews/"]').each((i, el) => {
-      if (allNews.length >= 15) return false // Get more for better filtering
+    
+    // Target all potential news items more aggressively
+    const potentialNews = $('.news-item, article, .news-card, li, div[href*="/legalnews/"], a[href*="/legalnews/"]').toArray()
+    
+    potentialNews.forEach(item => {
+      if (allNews.length >= 30) return
       
-      const href = $(el).attr('href') || ''
+      const $item = $(item)
+      let $link = $item.find('a[href*="/legalnews/"]').first()
+      if ($link.length === 0) $link = $item.is('a') ? $item : null
+      if (!$link || !$link.attr('href')) return
+      
+      const href = $link.attr('href') || ''
       if (!href.match(/\d+\/$/)) return
       
       const fullLink = href.startsWith('http') ? href : `https://www.consultant.ru${href}`
-      let text = $(el).text().trim().replace(/\s+/g, ' ')
       
-      let date = new Date().toLocaleDateString('ru-RU')
-      const dateMatch = text.match(/^(Сегодня|Вчера|\d{1,2}\.\d{2}\.\d{4}|\d{1,2}\s+(января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)\s+\d{4})/i)
-      if (dateMatch) {
-        date = dateMatch[0]
-        const title = text.replace(dateMatch[0], '').trim()
-        text = title
+      // Extract title from link text or parent
+      let titleText = $link.text().trim().replace(/\s+/g, ' ')
+      const $titleParent = $link.parent().length ? $link.parent().text().trim().replace(/\s+/g, ' ') : ''
+      if ($titleParent.length > titleText.length && $titleParent !== titleText) {
+        titleText = $titleParent.substring(0, 100) // Limit to reasonable length
       }
-
+      
+      // Clean title: remove dates from beginning if present
+      const datePattern = /^(Сегодня|Вчера|\d{1,2}\.\d{2}\.\d{4}|\d{1,2}\s+(январ|феврал|март|апрел|ма[йя]|июн[ья]|июл[ья]|август|сентябр[ья]|октябр[ья]|ноябр[ья]|декабр[ья])\s+\d{4})/i
+      const dateMatch = titleText.match(datePattern)
+      if (dateMatch) {
+        const date = dateMatch[0]
+        titleText = titleText.replace(date, '').trim()
+      }
+      
+      let date = new Date().toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' })
+      
+      // Try multiple date sources
+      const allDateSelectors = ['.date', 'time', '.datetime', '[data-date]', '.news-date', '.published']
+      const $container = $link.closest('article, .item, li, div')
+      let dateEl = $container.find(allDateSelectors.join(', ')).first()
+      if (dateEl.length === 0) dateEl = $link.siblings(allDateSelectors.join(', ')).first()
+      if (dateEl.length === 0) dateEl = $link.closest('li, div').prevAll().find(allDateSelectors.join(', ')).first()
+      
+      if (dateEl && dateEl.length > 0) {
+        let dateText = dateEl.text().trim()
+        const match = dateText.match(datePattern)
+        if (match) date = match[0]
+      }
+      
+      // Description extraction - look in siblings, parent children, next elements
       let description = ''
-      let descEl = $(el).next()
-      if (descEl.length === 0) descEl = $(el).parent().next().find('p, div')
-      if (descEl.length) description = descEl.text().trim().replace(/\s+/g, ' ')
-
-      const fullText = (text + ' ' + description).toLowerCase()
-      // Match if at least one keyword matches (OR logic)
+      const allDescSelectors = ['p', '.description', '.summary', '.excerpt', '.lead', '.text', '.content']
+      let descEl = $link.siblings(allDescSelectors.join(', ')).not(':has(a)').first()
+      if (descEl.length === 0) {
+        descEl = $container.children(allDescSelectors.join(', ')).not($link.closest(allDescSelectors.join(', '))).first()
+      }
+      if (descEl.length === 0) {
+        descEl = $link.nextAll('p, div').first().find('p').first()
+      }
+      if (descEl.length > 0 && descEl.text().trim().length > 15) {
+        description = descEl.text().trim().replace(/\s+/g, ' ').substring(0, 250)
+      }
+      
+      // Partial word matching for keywords (stemming-like)
+      const fullText = (titleText + ' ' + description).toLowerCase()
       const score = allKeywords.reduce((sum, kw) => {
-        if (fullText.includes(kw.toLowerCase())) return sum + 1
+        // Check exact, and also if keyword is substring (partial match)
+        const escapedKw = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').toLowerCase()
+        if (new RegExp(`\\b${escapedKw}\\b`).test(fullText) || fullText.includes(kw.toLowerCase())) {
+          return sum + 1
+        }
         return sum
       }, 0)
-
-      // Require at least 1 match, title >10 chars
-      if (text.length > 10 && score >= 1 && !allNews.some(item => item.title === text)) {
+      
+      // Even lower threshold: at least 1 match, title > 10 chars
+      if (titleText.length > 10 && score >= 1 && titleText.length > 5 && !allNews.some(existing => 
+        existing.title.toLowerCase().includes(titleText.toLowerCase().substring(0, 20)) || 
+        titleText.toLowerCase().includes(existing.title.toLowerCase().substring(0, 20))
+      )) {
         allNews.push({ 
-          title: text, 
+          title: titleText, 
           date, 
           description, 
           link: fullLink,
-          relevanceScore: score // Optional for sorting
+          relevanceScore: score
         })
       }
     })
 
-    // Sort by relevance descending
-    allNews.sort((a, b) => (b.relevanceScore || 0) - (a.relevanceScore || 0))
+    // Sort by relevance, then by date recency (if possible)
+    allNews.sort((a, b) => {
+      const scoreDiff = (b.relevanceScore || 0) - (a.relevanceScore || 0)
+      if (scoreDiff !== 0) return scoreDiff
+      
+      // Simple date sort: today > yesterday > others
+      const dateOrder = { 'Сегодня': 3, 'Вчера': 2, '03.10.2025': 1 }
+      const aOrder = dateOrder[a.date] || 0
+      const bOrder = dateOrder[b.date] || 0
+      return bOrder - aOrder
+    })
 
     const result = allNews.slice(0, 5)
+    
+    console.log(`Enhanced keyword fallback found ${result.length} news for ${scopes}. Sample keywords:`, allKeywords.slice(0, 3), 'Sample titles:', result.map(n => n.title.substring(0, 50)))
     
     newsCache[cacheKey] = { data: result, timestamp: now }
     return result
   } catch (err) {
-    console.error('Keyword fallback error:', err)
+    console.error('Enhanced keyword fallback error:', err)
     return []
   }
 }
