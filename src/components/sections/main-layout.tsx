@@ -164,7 +164,7 @@ export default function MainLayout({ newsSidebar, aiSearch, additionalServices }
   if (isLg) {
     return (
       <div className="bg-background flex-1">
-        <div className="w-full max-w-[1200px] mx-auto px-4 flex flex-col lg:flex-row h-full">
+        <div className="w-full px-6 flex flex-col lg:flex-row h-full">
           <div ref={containerRef} className="flex flex-col lg:flex-row gap-1 flex-1 h-full">
             <div 
               ref={leftRef} 
@@ -212,7 +212,7 @@ export default function MainLayout({ newsSidebar, aiSearch, additionalServices }
   } else {
     return (
       <div className="bg-background flex-1">
-        <div className="w-full max-w-[1200px] mx-auto px-1 sm:px-2 lg:px-3 flex flex-col h-full">
+        <div className="w-full px-1 sm:px-2 lg:px-3 flex flex-col h-full">
           <div className="w-full flex-none overflow-y-auto mb-4 border border-[#D4AF37] rounded-lg">
             {aiSearch}
           </div>
