@@ -1,158 +1,159 @@
-import Parser from 'rss-parser'
 import { NextResponse } from 'next/server'
-import * as cheerio from 'cheerio';
 
-const parser = new Parser()
+// Cache for 10 minutes
+let newsCache: { [key: string]: { data: any; timestamp: number } } = {}
+const CACHE_DURATION = 10 * 60 * 1000 // 10 minutes
 
-let newsCache = {}
-const CACHE_DURATION = 10 * 60 * 1000
+// Profile to scopes mapping (updated according to requirements)
+const profileToScopes: { [key: string]: string } = {
+  accounting_hr: 'accountant',
+  lawyer: 'jurist',
+  budget_accounting: 'jurist,budget,procurements,hr,medicine,nta',
+  procurements: 'procurements',
+  hr: 'hr',
+  labor_safety: 'hr',
+  nta: 'nta',
+  universal: 'accountant,jurist,procurements,hr,medicine,nta',
+  universal_budget: 'accountant,jurist,budget,procurements,hr,medicine,nta'
+}
+
+async function fetchNewsForScopes(scopes: string): Promise<any[]> {
+  const now = Date.now()
+  const cacheKey = scopes
+  
+  // Check cache
+  if (newsCache[cacheKey] && (now - newsCache[cacheKey].timestamp) < CACHE_DURATION) {
+    return newsCache[cacheKey].data
+  }
+
+  try {
+    const url = `https://www.consultant.ru/legalnews/`
+    const res = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      }
+    })
+    
+    if (!res.ok) {
+      console.warn(`Failed to fetch news for scopes: ${scopes}`)
+      return []
+    }
+
+    const html = await res.text()
+    const cheerio = await import('cheerio')
+    const { load } = cheerio
+    const $ = load(html)
+    
+    const requestedScopes = scopes.split(',')
+    const news: any[] = []
+    
+    // Find news items with scope filtering
+    $('[data-scopes]').each((i, el) => {
+      if (news.length >= 5) return false
+      
+      const itemScopes = $(el).attr('data-scopes')?.split(',') || []
+      
+      // Check if this news item matches any of the requested scopes
+      const hasMatchingScope = requestedScopes.some(scope => itemScopes.includes(scope))
+      if (!hasMatchingScope) return
+      
+      const $link = $(el).find('a[href*="/legalnews/"]').first()
+      const href = $link.attr('href')
+      
+      if (href && href.includes('/legalnews/') && href.match(/\d+\/$/)) {
+        const fullLink = href.startsWith('http') ? href : `https://www.consultant.ru${href}`
+        const titleEl = $(el).find('.ln-item__title, .news-title')
+        const title = titleEl.text().trim().replace(/\s+/g, ' ')
+        
+        const dateEl = $(el).find('.ln-item__date, .news-date')
+        let date = dateEl.text().trim() || new Date().toLocaleDateString('ru-RU')
+        
+        const descEl = $(el).find('.ln-item__description, .news-description')
+        const description = descEl.text().trim()
+        
+        if (title.length > 10 && !news.some(item => item.title === title)) {
+          news.push({ title, date, description, link: fullLink })
+        }
+      }
+    })
+    
+    // If no scoped items found, fallback to parsing all news items
+    if (news.length === 0) {
+      $('a[href*="/legalnews/"]').each((i, el) => {
+        if (news.length >= 5) return false
+        
+        const href = $(el).attr('href')
+        if (href && href.includes('/legalnews/') && href.match(/\d+\/$/)) {
+          const fullLink = href.startsWith('http') ? href : `https://www.consultant.ru${href}`
+          const text = $(el).text().trim().replace(/\s+/g, ' ')
+          
+          let date = new Date().toLocaleDateString('ru-RU')
+          let title = text
+          const dateMatch = text.match(/^(Сегодня|Вчера|\d{1,2}\s+(января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)\s+\d{4})/i)
+          if (dateMatch) {
+            date = dateMatch[0].replace(/\n/g, ' ').trim()
+            title = text.replace(dateMatch[0], '').replace(/\n+/g, ' ').trim()
+          }
+          
+          let description = ''
+          const nextEl = $(el).next()
+          if (nextEl.length) {
+            description = nextEl.text().trim()
+          }
+          
+          if (title.length > 10 && !news.some(item => item.title === title)) {
+            news.push({ title, date, description, link: fullLink })
+          }
+        }
+      })
+    }
+
+    const result = news.slice(0, 5)
+    
+    // Update cache
+    newsCache[cacheKey] = { data: result, timestamp: now }
+    
+    return result
+  } catch (err) {
+    console.error(`Error fetching news for scopes ${scopes}:`, err)
+    return []
+  }
+}
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
-    const scopesParam = searchParams.get('scopes') || 'all'
-    const now = Date.now()
-    const cacheKey = `rss_${scopesParam}`
-
-    if (newsCache[cacheKey] && (now - newsCache[cacheKey].timestamp) < CACHE_DURATION) {
-      return NextResponse.json({ news: newsCache[cacheKey].data })
+    const requestedProfile = searchParams.get('profile')
+    const requestedScopes = searchParams.get('scopes')
+    
+    // If specific scopes requested directly
+    if (requestedScopes) {
+      const news = await fetchNewsForScopes(requestedScopes)
+      return NextResponse.json({ news })
     }
-
-    let news = []
-
-    if (scopesParam === 'all') {
-      const feed = await parser.parseURL('https://www.consultant.ru/rss/hotdocs.xml')
-      news = feed.items.slice(0, 5).map(item => ({
-        title: item.title || '',
-        date: new Date(item.pubDate || now).toLocaleDateString('ru-RU'),
-        description: item.contentSnippet || item.content || '',
-        link: item.link || ''
-      }))
-    } else {
-      const scope = scopesParam  // Assume single scope
-      const themeMapping: { [key: string]: string } = {
-        'hr': '41',  // Труд
-        'accountant': '3204',  // Налоги
-        'medicine': '3203',  // Медицина
-        'procurements': '3196',  // Закупки
-        'nta': '11',  // Природоохранное право (example, add more as needed)
-        // Fallback keywords for un-mapped profiles
-      }
-
-      const tId = themeMapping[scope]
-      if (tId) {
-        const url = `https://www.consultant.ru/law/hotdocs/t${tId}/`
-        const res = await fetch(url, {
-          headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36' }
-        })
-        const html = await res.text()
-        const $ = cheerio.load(html)
-
-        // Parse hotdocs items - adjust selectors based on structure
-        // Assumes structure like .hotdocs-item or li with date, a.title, desc
-        const items = $('.hotdocs-item, .news-item, li:has(a), [class*="hotdoc"]').slice(0, 5)
-        items.each((i, el) => {
-          const $el = $(el)
-          // Extract date (pattern match)
-          const fullText = $el.text().trim()
-          const dateMatch = fullText.match(/(\d{1,2}\s+[а-яё]+\s+\d{4})/)
-          const date = dateMatch ? dateMatch[1] : ''
-          if (!date) return
-
-          // Title from first a
-          const $a = $el.find('a').first()
-          const title = $a.text().trim()
-          if (!title) return
-
-          let link = $a.attr('href')
-          if (link && !link.startsWith('http')) {
-            link = `https://www.consultant.ru${link}`
-          }
-
-          // Description: text after title, before next date
-          let desc = fullText.replace(date, '').replace(title, '').replace(/\s+/g, ' ').trim()
-          // Clean common suffixes
-          desc = desc.replace(/\s*\(см\. аннотацию\)/, '').trim()
-
-          news.push({ title, date, description: desc, link: link || '' })
-        })
-
-        // Fallback to keywords if no items scraped
-        if (news.length === 0) {
-          const feed = await parser.parseURL('https://www.consultant.ru/rss/hotdocs.xml')
-          let allNews = feed.items.slice(0, 15).map(item => ({
-            title: item.title || '',
-            date: new Date(item.pubDate || now).toLocaleDateString('ru-RU'),
-            description: item.contentSnippet || item.content || '',
-            link: item.link || ''
-          }))
-
-          const keywordsByProfile = {
-            accountant: ['налог', 'бухгалт', 'учет', 'финанс', 'бюджет', 'бухучет', 'налоговый'],
-            jurist: ['право', 'гражданск', 'уголовн', 'правосудие', 'суд', 'семья', 'прокуратур', 'адвокатур', 'международн'],
-            budget: ['бюджет', 'финанс', 'госуправлен', 'государств'],
-            procurements: ['закупк', 'тендер', 'аукцион', 'контракт'],
-            hr: ['труд', 'кадр', 'пособи', 'льгот', 'тк рф', 'трудовой'],
-            medicine: ['медицин', 'здравоохран', 'лекарств', 'омс', 'минздрав'],
-            nta: ['норматив', 'техническ', 'стандарт', 'природоохран', 'строительств', 'транспорт']
-          }
-
-          const profileKeywords = keywordsByProfile[scope] || []
-          const allKeywords = new Set(profileKeywords.map(kw => kw.toLowerCase()))
-
-          if (allKeywords.size > 0) {
-            allNews = allNews.filter(item => {
-              const lowerTitle = (item.title || '').toLowerCase()
-              const lowerDesc = (item.description || '').toLowerCase()
-              return Array.from(allKeywords).some(kw => lowerTitle.includes(kw) || lowerDesc.includes(kw))
-            }).slice(0, 5)
-          } else {
-            allNews = allNews.slice(0, 5)
-          }
-
-          news = allNews
-        }
-      } else {
-        // Keyword fallback for unmapped
-        const feed = await parser.parseURL('https://www.consultant.ru/rss/hotdocs.xml')
-        let allNews = feed.items.slice(0, 15).map(item => ({
-          title: item.title || '',
-          date: new Date(item.pubDate || now).toLocaleDateString('ru-RU'),
-          description: item.contentSnippet || item.content || '',
-          link: item.link || ''
-        }))
-
-        const keywordsByProfile = {
-          accountant: ['налог', 'бухгалт', 'учет', 'финанс', 'бюджет', 'бухучет', 'налоговый'],
-          jurist: ['право', 'гражданск', 'уголовн', 'правосудие', 'суд', 'семья', 'прокуратур', 'адвокатур', 'международн'],
-          budget: ['бюджет', 'финанс', 'госуправлен', 'государств'],
-          procurements: ['закупк', 'тендер', 'аукцион', 'контракт'],
-          hr: ['труд', 'кадр', 'пособи', 'льгот', 'тк рф', 'трудовой'],
-          medicine: ['медицин', 'здравоохран', 'лекарств', 'омс', 'минздрав'],
-          nta: ['норматив', 'техническ', 'стандарт', 'природоохран', 'строительств', 'транспорт']
-        }
-
-        const profileKeywords = keywordsByProfile[scope] || []
-        const allKeywords = new Set(profileKeywords.map(kw => kw.toLowerCase()))
-
-        if (allKeywords.size > 0) {
-          allNews = allNews.filter(item => {
-            const lowerTitle = (item.title || '').toLowerCase()
-            const lowerDesc = (item.description || '').toLowerCase()
-            return Array.from(allKeywords).some(kw => lowerTitle.includes(kw) || lowerDesc.includes(kw))
-          }).slice(0, 5)
-        } else {
-          allNews = allNews.slice(0, 5)
-        }
-
-        news = allNews
-      }
+    
+    // If specific profile requested, fetch only that one
+    if (requestedProfile && profileToScopes[requestedProfile]) {
+      const news = await fetchNewsForScopes(profileToScopes[requestedProfile])
+      return NextResponse.json({ profiles: { [requestedProfile]: news }, news })
     }
+    
+    // Otherwise, fetch all profiles in parallel
+    const profileEntries = Object.entries(profileToScopes)
+    const results = await Promise.all(
+      profileEntries.map(([profile, scopes]) => 
+        fetchNewsForScopes(scopes).then(news => ({ profile, news }))
+      )
+    )
+    
+    const allProfiles: Record<string, any[]> = {}
+    results.forEach(({ profile, news }) => {
+      allProfiles[profile] = news
+    })
 
-    newsCache[cacheKey] = { data: news, timestamp: now }
-    return NextResponse.json({ news })
+    return NextResponse.json({ profiles: allProfiles })
   } catch (err) {
-    console.error('News Error:', err)
+    console.error(err)
     return NextResponse.json({ error: 'Не удалось загрузить новости' }, { status: 500 })
   }
 }

@@ -42,80 +42,50 @@ const profileDefaults: { [key: string]: string[] } = {
   universal_budget: ['accountant', 'jurist', 'budget', 'procurements', 'hr', 'medicine', 'nta']
 }
 
-// Profile to scopes mapping (duplicated from API for frontend defaults)
-const profileToScopes: { [key: string]: string } = {
-  accounting_hr: 'accountant',
-  lawyer: 'jurist',
-  budget_accounting: 'jurist,budget,procurements,hr,medicine,nta',
-  procurements: 'procurements',
-  hr: 'hr',
-  labor_safety: 'hr',
-  nta: 'nta',
-  universal: 'accountant,jurist,procurements,hr,medicine,nta',
-  universal_budget: 'accountant,jurist,budget,procurements,hr,medicine,nta'
-}
-
 export default function NewsSidebar({ anonymousLoggedIn, selectedProfile }: NewsSidebarProps) {
-  const [filterScopes, setFilterScopes] = useState<string[]>([])
   const [news, setNews] = useState<NewsItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [showFilter, setShowFilter] = useState(false)
+  const [selectedNewsProfiles, setSelectedNewsProfiles] = useState<string[]>([])
 
-  // Initial load: all news
+  // Initialize selected news profiles based on user profile
   useEffect(() => {
-    const loadAllNews = async () => {
-      setLoading(true)
-      setError(null)
-      try {
-        const res = await fetch('/api/news')
-        if (!res.ok) throw new Error('Failed to fetch')
-        const data = await res.json()
-        setNews(data.news || [])
-        
-        // Set default scopes based on selectedProfile
-        const defaultScopes = profileToScopes[selectedProfile] ? profileToScopes[selectedProfile].split(',') : []
-        setFilterScopes(defaultScopes)
-      } catch (err) {
-        setError('Ошибка загрузки новостей')
-      } finally {
-        setLoading(false)
-      }
-    }
-    loadAllNews()
+    const defaults = profileDefaults[selectedProfile] || profileDefaults.universal
+    setSelectedNewsProfiles(defaults)
   }, [selectedProfile])
 
-  // On filter change: refetch with selected scopes
   useEffect(() => {
-    const loadFilteredNews = async () => {
-      setLoading(true)
-      setError(null)
+    if (!anonymousLoggedIn || selectedNewsProfiles.length === 0) return
+
+    const fetchNews = async () => {
       try {
-        if (filterScopes.length === 0) {
-          // If no filters, load all
-          const res = await fetch('/api/news')
-          if (!res.ok) throw new Error('Failed to fetch')
-          const data = await res.json()
-          setNews(data.news || [])
-        } else {
-          const scopesStr = filterScopes.join(',')
-          const res = await fetch(`/api/news?scopes=${scopesStr}`)
-          if (!res.ok) throw new Error('Failed to fetch')
-          const data = await res.json()
-          setNews(data.news || [])
+        setLoading(true)
+        setError(null)
+        
+        // Fetch news with selected scopes
+        const scopes = selectedNewsProfiles.join(',')
+        const response = await fetch(`/api/news?scopes=${scopes}`)
+        if (!response.ok) throw new Error('Failed to fetch news')
+        
+        const data = await response.json()
+        if (data.error) {
+          throw new Error(data.error)
         }
-      } catch (err) {
-        setError('Ошибка загрузки новостей')
+        
+        setNews(data.news || [])
+      } catch (err: any) {
+        setError(err.message || "Не удалось загрузить новости")
+        console.error(err)
       } finally {
         setLoading(false)
       }
     }
 
-    loadFilteredNews()
-  }, [filterScopes])
+    fetchNews()
+  }, [anonymousLoggedIn, selectedNewsProfiles])
 
   const toggleNewsProfile = (profileId: string) => {
-    setFilterScopes(prev => {
+    setSelectedNewsProfiles(prev => {
       if (prev.includes(profileId)) {
         // Don't allow deselecting all profiles
         if (prev.length === 1) return prev
@@ -150,57 +120,78 @@ export default function NewsSidebar({ anonymousLoggedIn, selectedProfile }: News
     )
   }
 
+  if (error) {
+    return (
+      <div className="bg-white rounded-md p-1 space-y-1 h-full flex flex-col justify-center border border-[#DAA520]">
+        <div className="text-red-500 text-sm">{error}</div>
+      </div>
+    )
+  }
+
   return (
     <div className="bg-white rounded-md p-1 space-y-1 h-full flex flex-col border border-[#DAA520]">
-      {error && (
-        <div className="bg-red-50 border border-red-200 rounded p-2 mb-2">
-          <p className="text-red-600 text-xs">{error}</p>
-        </div>
-      )}
-      <div className="flex justify-between items-center mb-2">
-        <h3 className="text-sm font-semibold">Новости</h3>
-        <div className="relative">
-          <button 
-            onClick={() => setShowFilter(!showFilter)}
-            className="text-xs text-gray-600 hover:text-primary flex items-center gap-1"
-          >
-            Фильтр профилей ▼
-          </button>
-          {showFilter && (
-            <div className="absolute right-0 top-full mt-1 bg-white border rounded shadow-lg p-2 w-48 z-10 text-xs">
-              {newsProfiles.map(profile => (
-                <label key={profile.id} className="flex items-center gap-1 cursor-pointer py-1">
-                  <input
-                    type="checkbox"
-                    checked={filterScopes.includes(profile.id)}
-                    onChange={(e) => {
-                      const newScopes = e.target.checked
-                        ? [...filterScopes, profile.id]
-                        : filterScopes.filter(s => s !== profile.id)
-                      setFilterScopes(newScopes)
-                    }}
-                    className="w-3 h-3"
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-[18px] font-semibold text-[#333333]">Новости</h2>
+        
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="h-6 px-2 text-[10px] border-[#DAA520] hover:bg-[#F8F9FA]"
+            >
+              Фильтр <ChevronDown className="ml-1 h-3 w-3" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-56 p-2" align="end">
+            <div className="space-y-1.5">
+              <div className="text-[10px] font-semibold text-[#333333] mb-2">Профили новостей</div>
+              {newsProfiles.map((profile) => (
+                <div key={profile.id} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={profile.id}
+                    checked={selectedNewsProfiles.includes(profile.scope)}
+                    onCheckedChange={() => toggleNewsProfile(profile.scope)}
+                    className="h-3 w-3"
                   />
-                  <span>{profile.label}</span>
-                </label>
+                  <label
+                    htmlFor={profile.id}
+                    className="text-[10px] text-[#333333] cursor-pointer select-none"
+                  >
+                    {profile.label}
+                  </label>
+                </div>
               ))}
             </div>
-          )}
-        </div>
+          </PopoverContent>
+        </Popover>
       </div>
 
-      <div className={`space-y-3 ${loading ? 'animate-pulse' : ''}`}>
-        {news.map((item, i) => (
-          <div key={i} className="text-xs leading-relaxed">
-            <div className="text-gray-500 mb-1">{item.date}</div>
-            <a href={item.link} target="_blank" rel="noopener" className="text-primary hover:underline font-medium">
+      <div className="space-y-1 flex-1 overflow-y-auto">
+        {news.slice(0, 5).map((item, index) => (
+          <a
+            key={index}
+            href={item.link}
+            className="block p-2 bg-white rounded hover:bg-[#F8F9FA] transition-colors no-underline"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <div className="mb-2">
+              <span className="text-xs text-[#666666] leading-tight">{item.date}</span>
+            </div>
+            <h3 className="text-sm font-normal text-[#0066CC] leading-relaxed mb-2 hover:underline">
               {item.title}
-            </a>
+            </h3>
             {item.description && (
-              <p className="mt-1 text-gray-700">{item.description}</p>
+              <p className="text-xs text-[#666666] leading-tight">
+                {item.description}
+              </p>
             )}
-          </div>
+          </a>
         ))}
+        {news.length === 0 && (
+          <p className="text-[#666666] text-center py-1">Новости не найдены для выбранного профиля</p>
+        )}
       </div>
 
       <div className="pt-1 border-t border-[#DAA520]">
