@@ -81,7 +81,20 @@ export default function GigaChatWindow({ selectedProfile }: GigaChatWindowProps)
         <textarea
           ref={textareaRef}
           value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
+          onChange={(e) => {
+            let value = e.target.value;
+            // Добавляем пробел в конце каждой строки (кроме последней)
+            const lines = value.split('\n');
+            if (lines.length > 1) {
+              value = lines.map((line, index) => {
+                if (index < lines.length - 1 && line.length > 0 && !line.endsWith(' ')) {
+                  return line + ' ';
+                }
+                return line;
+              }).join('\n');
+            }
+            setInputValue(value);
+          }}
           onKeyPress={(e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
               e.preventDefault();
