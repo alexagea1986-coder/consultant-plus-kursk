@@ -127,25 +127,12 @@ export async function GET(request: Request) {
   }
 
   // Map app profiles to mock data keys
-  const profileMap: { [key: string]: string[] } = {
-    accounting_hr: ['accountant', 'hr'],
-    jurist: ['jurist'],
-    accountant: ['accountant'],
-    budget_accounting: ['budget_accounting', 'accountant'],
-    procurements: ['procurements'],
-    hr: ['hr'],
-    labor_safety: ['hr'],
-    nta: ['jurist'],
-    universal: ['jurist', 'accountant', 'hr', 'procurements'],
-    universal_budget: ['jurist', 'accountant', 'hr', 'procurements', 'budget_accounting']
-  }
-
-  const keys = profileMap[scopes] || []
+  const scopesList = scopes.split(',')
   let allNews: any[] = []
 
-  for (const key of keys) {
-    if (mockNewsData[key]) {
-      allNews = allNews.concat(mockNewsData[key])
+  for (const scope of scopesList) {
+    if (mockNewsData[scope]) {
+      allNews = allNews.concat(mockNewsData[scope])
     }
   }
 
@@ -166,5 +153,13 @@ export async function GET(request: Request) {
     return parseDate(b.date) - parseDate(a.date)
   })
 
-  return Response.json(unique.slice(0, 20))
+  // Transform to expected format
+  const news = unique.slice(0, 20).map(item => ({
+    title: item.title,
+    date: item.date,
+    description: item.announce,
+    link: item.url
+  }))
+
+  return Response.json({ news })
 }
